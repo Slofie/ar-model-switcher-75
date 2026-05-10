@@ -14,24 +14,22 @@ const MODELS = [
   },
 ];
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+type ModelViewerProps = React.HTMLAttributes<HTMLElement> & {
+  src?: string;
+  ar?: boolean;
+  "ar-modes"?: string;
+  "camera-controls"?: boolean;
+  "touch-action"?: string;
+  "shadow-intensity"?: string;
+  poster?: string;
+  alt?: string;
+  "auto-rotate"?: boolean;
+};
+
+declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "model-viewer": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          src?: string;
-          ar?: boolean;
-          "ar-modes"?: string;
-          "camera-controls"?: boolean;
-          "touch-action"?: string;
-          "shadow-intensity"?: string;
-          poster?: string;
-          alt?: string;
-          "auto-rotate"?: boolean;
-        },
-        HTMLElement
-      >;
+      "model-viewer": ModelViewerProps;
     }
   }
 }
