@@ -66,8 +66,8 @@ export function ARViewer() {
         <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {loaded ? (
             <model-viewer
-              ref={viewerRef as React.Ref<HTMLElement>}
               key={current.src}
+              ref={viewerRef as React.Ref<HTMLElement>}
               src={current.src}
               ios-src={current.iosSrc}
               alt={current.label}
