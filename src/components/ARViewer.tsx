@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const MODELS = [
   {
-    name: "Model 1",
+    name: "Voor",
+    label: "Huidige situatie",
     src: "/models/model1.glb",
+    iosSrc: "/models/model1.usdz", // optioneel; valt terug op auto-conversie als afwezig
   },
   {
-    name: "Model 2",
+    name: "Na",
+    label: "Nieuwe situatie",
     src: "/models/model2.glb",
+    iosSrc: "/models/model2.usdz",
   },
 ];
 
@@ -16,14 +20,17 @@ type ModelViewerProps = React.HTMLAttributes<HTMLElement> & {
   key?: React.Key;
   ref?: React.Ref<HTMLElement>;
   src?: string;
+  "ios-src"?: string;
   ar?: boolean;
   "ar-modes"?: string;
+  "ar-scale"?: string;
+  "ar-placement"?: string;
   "camera-controls"?: boolean;
   "touch-action"?: string;
   "shadow-intensity"?: string;
-  poster?: string;
-  alt?: string;
   "auto-rotate"?: boolean;
+  exposure?: string;
+  alt?: string;
 };
 
 declare module "react" {
@@ -44,37 +51,38 @@ export function ARViewer() {
   }, []);
 
   const current = MODELS[index];
-  const next = MODELS[(index + 1) % MODELS.length];
-
-  const swap = () => setIndex((i) => (i + 1) % MODELS.length);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border px-6 py-4">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          AR Model Viewer
+          AR Voor / Na Viewer
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Bekijk 3D-modellen en plaats ze in jouw ruimte met AR.
+          Vergelijk de huidige en nieuwe situatie in jouw ruimte.
         </p>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+      <main className="flex flex-1 flex-col items-center justify-center gap-6 p-4 sm:p-6">
         <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {loaded ? (
             <model-viewer
+              key={current.src}
               ref={viewerRef as React.Ref<HTMLElement>}
               src={current.src}
-              alt={current.name}
+              ios-src={current.iosSrc}
+              alt={current.label}
               ar
               ar-modes="webxr scene-viewer quick-look"
+              ar-scale="fixed"
+              ar-placement="floor"
               camera-controls
               touch-action="pan-y"
               auto-rotate
               shadow-intensity="1"
+              exposure="1"
               style={{ width: "100%", height: "70vh", background: "transparent" }}
             >
-              {/* Knop die zichtbaar is binnen WebXR AR-sessie */}
               <button
                 slot="ar-button"
                 className="absolute bottom-4 right-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow"
@@ -87,20 +95,39 @@ export function ARViewer() {
               Laden…
             </div>
           )}
+
+          {/* Voor/Na toggle bovenop het model — werkt buiten AR */}
+          <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
+            <div className="pointer-events-auto inline-flex rounded-full border border-border bg-background/90 p-1 shadow-md backdrop-blur">
+              {MODELS.map((m, i) => (
+                <button
+                  key={m.name}
+                  onClick={() => setIndex(i)}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                    i === index
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-pressed={i === index}
+                >
+                  {m.name}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-2 text-center">
           <p className="text-sm text-muted-foreground">
-            Huidig model: <span className="font-medium text-foreground">{current.name}</span>
+            Weergave:{" "}
+            <span className="font-medium text-foreground">{current.label}</span>
           </p>
-          <Button size="lg" onClick={swap}>
-            Wissel naar {next.name}
-          </Button>
-          <p className="max-w-md text-center text-xs text-muted-foreground">
-            Tip: tijdens een WebXR AR-sessie blijft het model staan en kun je
-            via deze knop wisselen. In Scene Viewer (Android) / Quick Look
-            (iOS) is een custom knop in AR niet mogelijk — verlaat AR, wissel,
-            en open AR opnieuw.
+          <p className="max-w-md text-xs text-muted-foreground">
+            Wisselen op de pagina is direct. In AR op iPhone (Quick Look) is
+            wisselen tijdens de sessie technisch niet mogelijk: verlaat AR,
+            tik op Voor/Na en open AR opnieuw. Op Android (Scene Viewer /
+            WebXR) kan het model wél in AR worden gewisseld via deze knoppen.
           </p>
         </div>
       </main>
