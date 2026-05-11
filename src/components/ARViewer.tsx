@@ -1,16 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const MODELS = [
   {
-    name: "Astronaut",
-    src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    poster: "https://modelviewer.dev/shared-assets/models/Astronaut.webp",
+    name: "Model 1",
+    src: "/models/model1.glb",
   },
   {
-    name: "Horse",
-    src: "https://modelviewer.dev/shared-assets/models/Horse.glb",
-    poster: "",
+    name: "Model 2",
+    src: "/models/model2.glb",
   },
 ];
 
@@ -39,12 +37,16 @@ declare module "react" {
 export function ARViewer() {
   const [index, setIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const viewerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     import("@google/model-viewer").then(() => setLoaded(true));
   }, []);
 
   const current = MODELS[index];
+  const next = MODELS[(index + 1) % MODELS.length];
+
+  const swap = () => setIndex((i) => (i + 1) % MODELS.length);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -58,12 +60,11 @@ export function ARViewer() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
-        <div className="w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {loaded ? (
             <model-viewer
-              key={current.src}
+              ref={viewerRef as React.Ref<HTMLElement>}
               src={current.src}
-              poster={current.poster}
               alt={current.name}
               ar
               ar-modes="webxr scene-viewer quick-look"
@@ -72,7 +73,15 @@ export function ARViewer() {
               auto-rotate
               shadow-intensity="1"
               style={{ width: "100%", height: "70vh", background: "transparent" }}
-            />
+            >
+              {/* Knop die zichtbaar is binnen WebXR AR-sessie */}
+              <button
+                slot="ar-button"
+                className="absolute bottom-4 right-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow"
+              >
+                Bekijk in AR
+              </button>
+            </model-viewer>
           ) : (
             <div className="flex h-[70vh] items-center justify-center text-muted-foreground">
               Laden…
@@ -84,15 +93,14 @@ export function ARViewer() {
           <p className="text-sm text-muted-foreground">
             Huidig model: <span className="font-medium text-foreground">{current.name}</span>
           </p>
-          <Button
-            size="lg"
-            onClick={() => setIndex((i) => (i + 1) % MODELS.length)}
-          >
-            Wissel naar {MODELS[(index + 1) % MODELS.length].name}
+          <Button size="lg" onClick={swap}>
+            Wissel naar {next.name}
           </Button>
           <p className="max-w-md text-center text-xs text-muted-foreground">
-            Tik op de AR-knop in de hoek van het model (op een telefoon) om het
-            model in jouw ruimte te plaatsen.
+            Tip: tijdens een WebXR AR-sessie blijft het model staan en kun je
+            via deze knop wisselen. In Scene Viewer (Android) / Quick Look
+            (iOS) is een custom knop in AR niet mogelijk — verlaat AR, wissel,
+            en open AR opnieuw.
           </p>
         </div>
       </main>
