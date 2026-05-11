@@ -17,6 +17,7 @@ const MODELS = [
 ];
 
 type ModelViewerProps = React.HTMLAttributes<HTMLElement> & {
+  key?: React.Key;
   ref?: React.Ref<HTMLElement>;
   src?: string;
   "ios-src"?: string;
