@@ -68,7 +68,6 @@ export function ARViewer() {
               key={current.src}
               ref={viewerRef as React.Ref<HTMLElement>}
               src={current.src}
-              ios-src={current.iosSrc}
               alt={current.label}
               ar
               ar-modes="webxr scene-viewer quick-look"
