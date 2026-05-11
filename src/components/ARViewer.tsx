@@ -6,13 +6,11 @@ const MODELS = [
     name: "Voor",
     label: "Huidige situatie",
     src: "/models/model1.glb",
-    iosSrc: "/models/model1.usdz", // optioneel; valt terug op auto-conversie als afwezig
   },
   {
     name: "Na",
     label: "Nieuwe situatie",
     src: "/models/model2.glb",
-    iosSrc: "/models/model2.usdz",
   },
 ];
 
