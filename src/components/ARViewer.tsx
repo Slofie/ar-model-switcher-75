@@ -6,13 +6,11 @@ const MODELS = [
     name: "Voor",
     label: "Huidige situatie",
     src: "/models/model1.glb",
-    iosSrc: "/models/model1.usdz", // optioneel; valt terug op auto-conversie als afwezig
   },
   {
     name: "Na",
     label: "Nieuwe situatie",
     src: "/models/model2.glb",
-    iosSrc: "/models/model2.usdz",
   },
 ];
 
@@ -70,7 +68,6 @@ export function ARViewer() {
               key={current.src}
               ref={viewerRef as React.Ref<HTMLElement>}
               src={current.src}
-              ios-src={current.iosSrc}
               alt={current.label}
               ar
               ar-modes="webxr scene-viewer quick-look"
