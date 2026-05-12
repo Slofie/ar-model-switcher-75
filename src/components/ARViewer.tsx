@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const MODELS = [
-  { name: "Voor", label: "Huidige situatie", src: "/models/model1.glb" },
-  { name: "Na", label: "Nieuwe situatie", src: "/models/model2.glb" },
+  { name: "Voor", label: "Huidige situatie", src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download" },
+  { name: "Na", label: "Nieuwe situatie", src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download" },
 ];
 
 // A-Frame + AR.js zijn web components; we registreren ze als generieke JSX tags
@@ -20,14 +20,22 @@ declare module "react" {
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
+    const existingScript = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement;
+    if (existingScript) {
+      if (existingScript.getAttribute("data-loaded") === "true") {
+        resolve();
+      } else {
+        existingScript.addEventListener("load", () => resolve());
+        existingScript.addEventListener("error", () => reject(new Error(`Kon script niet laden: ${src}`)));
+      }
       return;
     }
     const s = document.createElement("script");
     s.src = src;
-    s.async = false; // volgorde behouden (A-Frame moet eerst)
-    s.onload = () => resolve();
+    s.onload = () => {
+      s.setAttribute("data-loaded", "true");
+      resolve();
+    };
     s.onerror = () => reject(new Error(`Kon script niet laden: ${src}`));
     document.head.appendChild(s);
   });
