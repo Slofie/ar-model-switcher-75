@@ -53,7 +53,8 @@ export function ARViewer() {
     let cancelled = false;
     (async () => {
       try {
-        await loadScript("https://aframe.io/releases/1.5.0/aframe.min.js");
+        // A-Frame 1.4.2 is vaak stabieler met AR.js dan 1.5.0
+        await loadScript("https://aframe.io/releases/1.4.2/aframe.min.js");
         await loadScript(
           "https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js",
         );
@@ -77,6 +78,27 @@ export function ARViewer() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* Injecteer AR-specifieke CSS om de video-feed zichtbaar te maken */}
+      <style>{`
+        .a-canvas {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+        #arjs-video {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          z-index: -1 !important;
+        }
+        .a-enter-vr { display: none !important; }
+      `}</style>
+
       <header className="border-b border-border px-6 py-4">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           AR Voor / Na Viewer
@@ -120,7 +142,10 @@ export function ARViewer() {
             </p>
           </div>
         ) : (
-          <div className="relative h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-black shadow-sm">
+          <div className={cn(
+            "relative h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border shadow-sm",
+            !arReady ? "bg-black" : "bg-transparent"
+          )}>
             {!arReady ? (
               <div className="flex h-full items-center justify-center text-white/80">
                 AR-bibliotheek laden…
@@ -130,7 +155,7 @@ export function ARViewer() {
                 embedded
                 vr-mode-ui="enabled: false"
                 renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
-                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3"
+                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best;"
                 style={{ width: "100%", height: "100%" }}
               >
                 <a-marker preset="hiro">
