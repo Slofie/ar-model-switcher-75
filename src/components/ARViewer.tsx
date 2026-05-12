@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Maximize2, Info, Camera } from "lucide-react";
+import { Loader2, Maximize2, Info, Camera, AlertCircle } from "lucide-react";
+import { createServerFn } from "@tanstack/react-start";
 
 // Registreer model-viewer als een custom element voor TypeScript
 declare global {
@@ -13,6 +14,26 @@ declare global {
     }
   }
 }
+
+// Server function die fungeert als proxy om CORS-problemen te omzeilen
+const getModelProxy = createServerFn("GET", async (url: string) => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Source returned ${response.status}`);
+    
+    // We streamen de body direct terug naar de client met de juiste headers
+    return new Response(response.body, {
+      headers: {
+        "Content-Type": "model/gltf-binary",
+        "Cache-Control": "public, max-age=3600",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (error) {
+    console.error("Proxy error:", error);
+    return new Response("Failed to fetch model", { status: 500 });
+  }
+});
 
 const MODELS = [
   { 
@@ -34,6 +55,7 @@ const MODELS = [
 export function ARViewer() {
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState(false);
 
   useEffect(() => {
@@ -46,6 +68,15 @@ export function ARViewer() {
   }, []);
 
   const current = MODELS[index];
+  
+  // Bouw de proxy URL op. TanStack Start verwacht de payload in de query string voor GET.
+  const proxyUrl = `${getModelProxy.url}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
+
+  const handleModelError = (event: any) => {
+    console.error("Model viewer error:", event);
+    setError("Het model kon niet worden geladen. Controleer of de link nog geldig is.");
+    setLoading(false);
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8fafc]">
@@ -60,7 +91,7 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.0 Beta
+            v2.1 Stable
           </Badge>
         </div>
       </header>
@@ -76,21 +107,31 @@ export function ARViewer() {
                   <p className="mt-4 text-sm font-medium text-slate-600">Model wordt geladen...</p>
                 </div>
               )}
+
+              {error && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 p-6 text-center">
+                  <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Oeps! Er ging iets mis</h3>
+                  <p className="text-sm text-slate-600 mb-6 max-w-xs">{error}</p>
+                  <Button onClick={() => { setError(null); setLoading(true); }} variant="outline">
+                    Probeer opnieuw
+                  </Button>
+                </div>
+              )}
               
               <model-viewer
-                src={current.src}
+                src={proxyUrl}
                 ar
                 ar-modes="webxr scene-viewer quick-look"
                 camera-controls
-                poster="/placeholder.png"
                 shadow-intensity="1"
                 environment-image="neutral"
                 auto-rotate
                 exposure="1"
                 interaction-prompt="auto"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
-                onLoad={() => setLoading(false)}
-                onError={() => setLoading(false)}
+                onLoad={() => { setLoading(false); setError(null); }}
+                onError={handleModelError}
               >
                 {/* AR Start Button Customization */}
                 <button
@@ -100,8 +141,6 @@ export function ARViewer() {
                   <Camera className="h-4 w-4" />
                   BEKIJK IN JE RUIMTE
                 </button>
-
-                <div slot="poster" className="hidden"></div>
               </model-viewer>
 
               {/* Status Indicator */}
@@ -112,16 +151,6 @@ export function ARViewer() {
                 )}>
                   {current.label}
                 </Badge>
-              </div>
-
-              {/* Help Tip */}
-              <div className="absolute bottom-6 left-6 hidden md:block">
-                <div className="flex items-center gap-2 rounded-lg bg-black/10 px-3 py-1.5 backdrop-blur-md">
-                  <Info className="h-4 w-4 text-slate-700" />
-                  <p className="text-xs font-medium text-slate-700">
-                    Sleep om te draaien • Scroll om te zoomen
-                  </p>
-                </div>
               </div>
             </Card>
           </div>
@@ -142,6 +171,7 @@ export function ARViewer() {
                   onClick={() => {
                     if (i !== index) {
                       setLoading(true);
+                      setError(null);
                       setIndex(i);
                     }
                   }}
@@ -186,25 +216,13 @@ export function ARViewer() {
                 </div>
               </Card>
             )}
-
-            <div className="mt-auto space-y-4 pt-6 border-t border-slate-200">
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                  <Maximize2 className="h-5 w-5 text-slate-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Native AR Ervaring</p>
-                  <p className="text-xs text-slate-500 italic">Ondersteunt iOS Quick Look & Google Scene Viewer</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </main>
 
       <footer className="mt-12 border-t border-slate-200 bg-white px-6 py-8 text-center">
         <p className="text-sm font-medium text-slate-400">
-          © 2026 Visualisaties • Aangedreven door Google Model Viewer
+          © 2026 Visualisaties • CORS Proxy Actief
         </p>
       </footer>
     </div>
