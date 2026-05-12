@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const MODELS = [
-  { name: "Voor", label: "Huidige situatie", src: "/models/model1.glb" },
-  { name: "Na", label: "Nieuwe situatie", src: "/models/model2.glb" },
+  { name: "Voor", label: "Huidige situatie", src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download" },
+  { name: "Na", label: "Nieuwe situatie", src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download" },
 ];
 
 // A-Frame + AR.js zijn web components; we registreren ze als generieke JSX tags
@@ -20,14 +20,22 @@ declare module "react" {
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
+    const existingScript = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement;
+    if (existingScript) {
+      if (existingScript.getAttribute("data-loaded") === "true") {
+        resolve();
+      } else {
+        existingScript.addEventListener("load", () => resolve());
+        existingScript.addEventListener("error", () => reject(new Error(`Kon script niet laden: ${src}`)));
+      }
       return;
     }
     const s = document.createElement("script");
     s.src = src;
-    s.async = false; // volgorde behouden (A-Frame moet eerst)
-    s.onload = () => resolve();
+    s.onload = () => {
+      s.setAttribute("data-loaded", "true");
+      resolve();
+    };
     s.onerror = () => reject(new Error(`Kon script niet laden: ${src}`));
     document.head.appendChild(s);
   });
@@ -45,7 +53,8 @@ export function ARViewer() {
     let cancelled = false;
     (async () => {
       try {
-        await loadScript("https://aframe.io/releases/1.5.0/aframe.min.js");
+        // A-Frame 1.4.2 is stabieler met AR.js dan 1.5.0 voor camera-toegang
+        await loadScript("https://aframe.io/releases/1.4.2/aframe.min.js");
         await loadScript(
           "https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js",
         );
@@ -69,6 +78,29 @@ export function ARViewer() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* CSS om de camera-feed en het canvas correct te positioneren en zichtbaar te maken */}
+      <style>{`
+        .a-canvas {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+        #arjs-video {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          z-index: -1 !important;
+          margin-left: 0 !important;
+          margin-top: 0 !important;
+        }
+        .a-enter-vr { display: none !important; }
+      `}</style>
+
       <header className="border-b border-border px-6 py-4">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           AR Voor / Na Viewer
@@ -112,7 +144,10 @@ export function ARViewer() {
             </p>
           </div>
         ) : (
-          <div className="relative h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-black shadow-sm">
+          <div className={cn(
+            "relative h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border shadow-sm transition-colors",
+            !arReady ? "bg-black" : "bg-transparent"
+          )}>
             {!arReady ? (
               <div className="flex h-full items-center justify-center text-white/80">
                 AR-bibliotheek laden…
@@ -122,7 +157,7 @@ export function ARViewer() {
                 embedded
                 vr-mode-ui="enabled: false"
                 renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
-                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3"
+                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best;"
                 style={{ width: "100%", height: "100%" }}
               >
                 <a-marker preset="hiro">
