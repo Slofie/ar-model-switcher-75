@@ -1,218 +1,212 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Maximize2, Info, Camera } from "lucide-react";
 
-const MODELS = [
-  { name: "Voor", label: "Huidige situatie", src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download" },
-  { name: "Na", label: "Nieuwe situatie", src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download" },
-];
-
-// A-Frame + AR.js zijn web components; we registreren ze als generieke JSX tags
-declare module "react" {
+// Registreer model-viewer als een custom element voor TypeScript
+declare global {
   namespace JSX {
     interface IntrinsicElements {
-      "a-scene": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
-      "a-marker": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
-      "a-entity": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
-      "a-camera": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
+      "model-viewer": any;
     }
   }
 }
 
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const existingScript = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement;
-    if (existingScript) {
-      if (existingScript.getAttribute("data-loaded") === "true") {
-        resolve();
-      } else {
-        existingScript.addEventListener("load", () => resolve());
-        existingScript.addEventListener("error", () => reject(new Error(`Kon script niet laden: ${src}`)));
-      }
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = src;
-    s.onload = () => {
-      s.setAttribute("data-loaded", "true");
-      resolve();
-    };
-    s.onerror = () => reject(new Error(`Kon script niet laden: ${src}`));
-    document.head.appendChild(s);
-  });
-}
+const MODELS = [
+  { 
+    id: "voor", 
+    name: "Voor", 
+    label: "Huidige situatie", 
+    src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download",
+    description: "De situatie zoals deze nu is, zonder aanpassingen."
+  },
+  { 
+    id: "na", 
+    name: "Na", 
+    label: "Nieuwe situatie", 
+    src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
+    description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
+  },
+];
 
 export function ARViewer() {
   const [index, setIndex] = useState(0);
-  const [arReady, setArReady] = useState(false);
-  const [arActive, setArActive] = useState(false);
-  const entityRef = useRef<HTMLElement | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [arSupported, setArSupported] = useState(false);
 
-  // Laad A-Frame + AR.js zodra de gebruiker AR start
   useEffect(() => {
-    if (!arActive || arReady) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        // A-Frame 1.4.2 is stabieler met AR.js dan 1.5.0 voor camera-toegang
-        await loadScript("https://aframe.io/releases/1.4.2/aframe.min.js");
-        await loadScript(
-          "https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js",
-        );
-        if (!cancelled) setArReady(true);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [arActive, arReady]);
-
-  // Wissel het model in AR door het gltf-model attribuut te updaten
-  useEffect(() => {
-    if (!arReady || !entityRef.current) return;
-    entityRef.current.setAttribute("gltf-model", MODELS[index].src);
-  }, [index, arReady]);
+    // Importeer de library dynamisch aan de client-side
+    import("@google/model-viewer").catch(console.error);
+    
+    // Check of AR ondersteund wordt (basis check)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    setArSupported(isMobile);
+  }, []);
 
   const current = MODELS[index];
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* CSS om de camera-feed en het canvas correct te positioneren en zichtbaar te maken */}
-      <style>{`
-        .a-canvas {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-        }
-        #arjs-video {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: cover !important;
-          z-index: -1 !important;
-          margin-left: 0 !important;
-          margin-top: 0 !important;
-        }
-        .a-enter-vr { display: none !important; }
-      `}</style>
-
-      <header className="border-b border-border px-6 py-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          AR Voor / Na Viewer
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Marker-based AR met AR.js + A-Frame. Werkt op iOS Safari en Android Chrome.
-        </p>
-      </header>
-
-      <main className="flex flex-1 flex-col items-center justify-center gap-6 p-4 sm:p-6">
-        {!arActive ? (
-          <div className="w-full max-w-2xl space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Zo werkt het</h2>
-              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-                <li>
-                  Print of toon de <strong>Hiro-marker</strong> op een ander scherm:{" "}
-                  <a
-                    href="https://stemkoski.github.io/AR-Examples/markers/hiro.png"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline"
-                  >
-                    download Hiro-marker
-                  </a>
-                </li>
-                <li>Tik op "Start AR" en geef toegang tot je camera.</li>
-                <li>Richt de camera op de marker — het 3D-model verschijnt erbovenop.</li>
-                <li>Wissel met de Voor/Na-knoppen tijdens de AR-sessie.</li>
-              </ol>
-            </div>
-            <button
-              onClick={() => setArActive(true)}
-              className="w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-            >
-              Start AR
-            </button>
-            <p className="text-xs text-muted-foreground">
-              Let op: AR.js vereist <strong>HTTPS</strong> (camera-toegang). Op
-              localhost werkt het ook.
+    <div className="flex min-h-screen flex-col bg-[#f8fafc]">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Project Visualisatie
+            </h1>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+              Augmented Reality Viewer
             </p>
           </div>
-        ) : (
-          <div className={cn(
-            "relative h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border shadow-sm transition-colors",
-            !arReady ? "bg-black" : "bg-transparent"
-          )}>
-            {!arReady ? (
-              <div className="flex h-full items-center justify-center text-white/80">
-                AR-bibliotheek laden…
-              </div>
-            ) : (
-              <a-scene
-                embedded
-                vr-mode-ui="enabled: false"
-                renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
-                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best;"
-                style={{ width: "100%", height: "100%" }}
-              >
-                <a-marker preset="hiro">
-                  <a-entity
-                    ref={entityRef as React.Ref<HTMLElement>}
-                    gltf-model={current.src}
-                    scale="0.5 0.5 0.5"
-                    position="0 0 0"
-                    rotation="0 0 0"
-                  />
-                </a-marker>
-                <a-entity camera />
-              </a-scene>
-            )}
+          <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
+            v2.0 Beta
+          </Badge>
+        </div>
+      </header>
 
-            {/* Voor/Na toggle — werkt live in AR */}
-            <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center">
-              <div className="pointer-events-auto inline-flex rounded-full border border-border bg-background/90 p-1 shadow-md backdrop-blur">
-                {MODELS.map((m, i) => (
-                  <button
-                    key={m.name}
-                    onClick={() => setIndex(i)}
-                    className={cn(
-                      "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                      i === index
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                    aria-pressed={i === index}
-                  >
-                    {m.name}
-                  </button>
-                ))}
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 md:p-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* 3D Preview Sectie */}
+          <div className="lg:col-span-8">
+            <Card className="relative aspect-[4/3] w-full overflow-hidden border-none bg-gradient-to-b from-slate-100 to-slate-200 shadow-2xl md:aspect-square lg:aspect-[4/3]">
+              {loading && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-100/50 backdrop-blur-sm">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="mt-4 text-sm font-medium text-slate-600">Model wordt geladen...</p>
+                </div>
+              )}
+              
+              <model-viewer
+                src={current.src}
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                camera-controls
+                poster="/placeholder.png"
+                shadow-intensity="1"
+                environment-image="neutral"
+                auto-rotate
+                exposure="1"
+                interaction-prompt="auto"
+                style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
+                onLoad={() => setLoading(false)}
+                onError={() => setLoading(false)}
+              >
+                {/* AR Start Button Customization */}
+                <button
+                  slot="ar-button"
+                  className="absolute bottom-6 right-6 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-xl transition-all hover:scale-105 active:scale-95"
+                >
+                  <Camera className="h-4 w-4" />
+                  BEKIJK IN JE RUIMTE
+                </button>
+
+                <div slot="poster" className="hidden"></div>
+              </model-viewer>
+
+              {/* Status Indicator */}
+              <div className="absolute left-6 top-6 flex flex-col gap-2">
+                <Badge className={cn(
+                  "w-fit px-3 py-1 text-sm font-semibold shadow-sm",
+                  index === 0 ? "bg-slate-700" : "bg-blue-600"
+                )}>
+                  {current.label}
+                </Badge>
               </div>
+
+              {/* Help Tip */}
+              <div className="absolute bottom-6 left-6 hidden md:block">
+                <div className="flex items-center gap-2 rounded-lg bg-black/10 px-3 py-1.5 backdrop-blur-md">
+                  <Info className="h-4 w-4 text-slate-700" />
+                  <p className="text-xs font-medium text-slate-700">
+                    Sleep om te draaien • Scroll om te zoomen
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Controls Sectie */}
+          <div className="flex flex-col gap-6 lg:col-span-4">
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-slate-900">Vergelijk Modellen</h2>
+              <p className="text-sm leading-relaxed text-slate-500">
+                Wissel tussen de huidige en nieuwe situatie om de impact van het project direct te zien.
+              </p>
             </div>
 
-            <button
-              onClick={() => {
-                setArActive(false);
-                setArReady(false);
-                // Volledige reload is de schoonste manier om AR.js' camera-stream op te ruimen
-                setTimeout(() => window.location.reload(), 50);
-              }}
-              className="absolute bottom-4 right-4 z-10 rounded-md bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow backdrop-blur"
-            >
-              Stop AR
-            </button>
-          </div>
-        )}
+            <div className="flex flex-col gap-3">
+              {MODELS.map((m, i) => (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    if (i !== index) {
+                      setLoading(true);
+                      setIndex(i);
+                    }
+                  }}
+                  className={cn(
+                    "group relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
+                    i === index
+                      ? "border-primary bg-white shadow-md"
+                      : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+                  )}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className={cn(
+                      "text-sm font-bold uppercase tracking-tight",
+                      i === index ? "text-primary" : "text-slate-500"
+                    )}>
+                      Optie {i + 1}: {m.name}
+                    </span>
+                    {i === index && (
+                      <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    )}
+                  </div>
+                  <span className="mt-1 text-base font-semibold text-slate-900">
+                    {m.label}
+                  </span>
+                  <p className="mt-2 text-xs text-slate-500 leading-snug">
+                    {m.description}
+                  </p>
+                </button>
+              ))}
+            </div>
 
-        <p className="text-sm text-muted-foreground">
-          Weergave:{" "}
-          <span className="font-medium text-foreground">{current.label}</span>
-        </p>
+            {!arSupported && (
+              <Card className="border-amber-100 bg-amber-50 p-4 shadow-none">
+                <div className="flex gap-3">
+                  <Info className="h-5 w-5 shrink-0 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-bold text-amber-900">AR Tips</p>
+                    <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                      Open deze website op een iPhone of Android toestel om de modellen in Augmented Reality te plaatsen.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <div className="mt-auto space-y-4 pt-6 border-t border-slate-200">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+                  <Maximize2 className="h-5 w-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Native AR Ervaring</p>
+                  <p className="text-xs text-slate-500 italic">Ondersteunt iOS Quick Look & Google Scene Viewer</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
+
+      <footer className="mt-12 border-t border-slate-200 bg-white px-6 py-8 text-center">
+        <p className="text-sm font-medium text-slate-400">
+          © 2026 Visualisaties • Aangedreven door Google Model Viewer
+        </p>
+      </footer>
     </div>
   );
 }
