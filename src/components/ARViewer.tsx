@@ -2,51 +2,68 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const MODELS = [
-  {
-    name: "Voor",
-    label: "Huidige situatie",
-    src: "/models/model1.glb",
-  },
-  {
-    name: "Na",
-    label: "Nieuwe situatie",
-    src: "/models/model2.glb",
-  },
+  { name: "Voor", label: "Huidige situatie", src: "/models/model1.glb" },
+  { name: "Na", label: "Nieuwe situatie", src: "/models/model2.glb" },
 ];
 
-type ModelViewerProps = React.HTMLAttributes<HTMLElement> & {
-  key?: React.Key;
-  ref?: React.Ref<HTMLElement>;
-  src?: string;
-  "ios-src"?: string;
-  ar?: boolean;
-  "ar-modes"?: string;
-  "ar-scale"?: string;
-  "ar-placement"?: string;
-  "camera-controls"?: boolean;
-  "touch-action"?: string;
-  "shadow-intensity"?: string;
-  "auto-rotate"?: boolean;
-  exposure?: string;
-  alt?: string;
-};
-
+// A-Frame + AR.js zijn web components; we registreren ze als generieke JSX tags
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "model-viewer": ModelViewerProps;
+      "a-scene": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
+      "a-marker": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
+      "a-entity": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
+      "a-camera": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & Record<string, unknown>;
     }
   }
 }
 
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = false; // volgorde behouden (A-Frame moet eerst)
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Kon script niet laden: ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
 export function ARViewer() {
   const [index, setIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const viewerRef = useRef<HTMLElement | null>(null);
+  const [arReady, setArReady] = useState(false);
+  const [arActive, setArActive] = useState(false);
+  const entityRef = useRef<HTMLElement | null>(null);
 
+  // Laad A-Frame + AR.js zodra de gebruiker AR start
   useEffect(() => {
-    import("@google/model-viewer").then(() => setLoaded(true));
-  }, []);
+    if (!arActive || arReady) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await loadScript("https://aframe.io/releases/1.5.0/aframe.min.js");
+        await loadScript(
+          "https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js",
+        );
+        if (!cancelled) setArReady(true);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [arActive, arReady]);
+
+  // Wissel het model in AR door het gltf-model attribuut te updaten
+  useEffect(() => {
+    if (!arReady || !entityRef.current) return;
+    entityRef.current.setAttribute("gltf-model", MODELS[index].src);
+  }, [index, arReady]);
 
   const current = MODELS[index];
 
@@ -57,76 +74,109 @@ export function ARViewer() {
           AR Voor / Na Viewer
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vergelijk de huidige en nieuwe situatie in jouw ruimte.
+          Marker-based AR met AR.js + A-Frame. Werkt op iOS Safari en Android Chrome.
         </p>
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 p-4 sm:p-6">
-        <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          {loaded ? (
-            <model-viewer
-              key={current.src}
-              ref={viewerRef as React.Ref<HTMLElement>}
-              src={current.src}
-              alt={current.label}
-              ar
-              ar-modes="webxr scene-viewer quick-look"
-              ar-scale="fixed"
-              ar-placement="floor"
-              camera-controls
-              touch-action="pan-y"
-              auto-rotate
-              shadow-intensity="1"
-              exposure="1"
-              style={{ width: "100%", height: "70vh", background: "transparent" }}
+        {!arActive ? (
+          <div className="w-full max-w-2xl space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Zo werkt het</h2>
+              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+                <li>
+                  Print of toon de <strong>Hiro-marker</strong> op een ander scherm:{" "}
+                  <a
+                    href="https://stemkoski.github.io/AR-Examples/markers/hiro.png"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline"
+                  >
+                    download Hiro-marker
+                  </a>
+                </li>
+                <li>Tik op "Start AR" en geef toegang tot je camera.</li>
+                <li>Richt de camera op de marker — het 3D-model verschijnt erbovenop.</li>
+                <li>Wissel met de Voor/Na-knoppen tijdens de AR-sessie.</li>
+              </ol>
+            </div>
+            <button
+              onClick={() => setArActive(true)}
+              className="w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
             >
-              <button
-                slot="ar-button"
-                className="absolute bottom-4 right-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow"
-              >
-                Bekijk in AR
-              </button>
-            </model-viewer>
-          ) : (
-            <div className="flex h-[70vh] items-center justify-center text-muted-foreground">
-              Laden…
-            </div>
-          )}
-
-          {/* Voor/Na toggle bovenop het model — werkt buiten AR */}
-          <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
-            <div className="pointer-events-auto inline-flex rounded-full border border-border bg-background/90 p-1 shadow-md backdrop-blur">
-              {MODELS.map((m, i) => (
-                <button
-                  key={m.name}
-                  onClick={() => setIndex(i)}
-                  className={cn(
-                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                    i === index
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  aria-pressed={i === index}
-                >
-                  {m.name}
-                </button>
-              ))}
-            </div>
+              Start AR
+            </button>
+            <p className="text-xs text-muted-foreground">
+              Let op: AR.js vereist <strong>HTTPS</strong> (camera-toegang). Op
+              localhost werkt het ook.
+            </p>
           </div>
-        </div>
+        ) : (
+          <div className="relative h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-black shadow-sm">
+            {!arReady ? (
+              <div className="flex h-full items-center justify-center text-white/80">
+                AR-bibliotheek laden…
+              </div>
+            ) : (
+              <a-scene
+                embedded
+                vr-mode-ui="enabled: false"
+                renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true"
+                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3"
+                style={{ width: "100%", height: "100%" }}
+              >
+                <a-marker preset="hiro">
+                  <a-entity
+                    ref={entityRef as React.Ref<HTMLElement>}
+                    gltf-model={current.src}
+                    scale="0.5 0.5 0.5"
+                    position="0 0 0"
+                    rotation="0 0 0"
+                  />
+                </a-marker>
+                <a-entity camera />
+              </a-scene>
+            )}
 
-        <div className="flex flex-col items-center gap-2 text-center">
-          <p className="text-sm text-muted-foreground">
-            Weergave:{" "}
-            <span className="font-medium text-foreground">{current.label}</span>
-          </p>
-          <p className="max-w-md text-xs text-muted-foreground">
-            Wisselen op de pagina is direct. In AR op iPhone (Quick Look) is
-            wisselen tijdens de sessie technisch niet mogelijk: verlaat AR,
-            tik op Voor/Na en open AR opnieuw. Op Android (Scene Viewer /
-            WebXR) kan het model wél in AR worden gewisseld via deze knoppen.
-          </p>
-        </div>
+            {/* Voor/Na toggle — werkt live in AR */}
+            <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center">
+              <div className="pointer-events-auto inline-flex rounded-full border border-border bg-background/90 p-1 shadow-md backdrop-blur">
+                {MODELS.map((m, i) => (
+                  <button
+                    key={m.name}
+                    onClick={() => setIndex(i)}
+                    className={cn(
+                      "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                      i === index
+                        ? "bg-primary text-primary-foreground shadow"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                    aria-pressed={i === index}
+                  >
+                    {m.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setArActive(false);
+                setArReady(false);
+                // Volledige reload is de schoonste manier om AR.js' camera-stream op te ruimen
+                setTimeout(() => window.location.reload(), 50);
+              }}
+              className="absolute bottom-4 right-4 z-10 rounded-md bg-background/90 px-4 py-2 text-sm font-medium text-foreground shadow backdrop-blur"
+            >
+              Stop AR
+            </button>
+          </div>
+        )}
+
+        <p className="text-sm text-muted-foreground">
+          Weergave:{" "}
+          <span className="font-medium text-foreground">{current.label}</span>
+        </p>
       </main>
     </div>
   );
