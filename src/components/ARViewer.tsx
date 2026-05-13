@@ -155,9 +155,6 @@ export function ARViewer() {
                 auto-rotate
                 exposure="1"
                 interaction-prompt="auto"
-                loading="eager"
-                reveal="auto"
-                powerPreference="high-performance"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
                 {/* AR Start Button Customization */}
