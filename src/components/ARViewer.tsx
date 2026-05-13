@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,6 +45,7 @@ export function ARViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState(false);
+  const modelViewerRef = useRef<any>(null);
 
   useEffect(() => {
     // Importeer de library dynamisch aan de client-side
@@ -54,6 +55,32 @@ export function ARViewer() {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     setArSupported(isMobile);
   }, []);
+
+  // Event listeners handmatig toevoegen aan de custom element (betrouwbaarder in React)
+  useEffect(() => {
+    const viewer = modelViewerRef.current;
+    if (!viewer) return;
+
+    const handleLoad = () => {
+      console.log("Model geladen!");
+      setLoading(false);
+      setError(null);
+    };
+
+    const handleError = (event: any) => {
+      console.error("Model viewer error:", event);
+      setError("Het model kon niet worden geladen. Controleer of de link nog geldig is.");
+      setLoading(false);
+    };
+
+    viewer.addEventListener("load", handleLoad);
+    viewer.addEventListener("error", handleError);
+
+    return () => {
+      viewer.removeEventListener("load", handleLoad);
+      viewer.removeEventListener("error", handleError);
+    };
+  }, [index]); // Reset listeners als we van model wisselen
 
   const current = MODELS[index];
   
@@ -66,12 +93,6 @@ export function ARViewer() {
     const baseProxyUrl = getModelProxy.url || "/_server";
     proxyUrl = `${baseProxyUrl}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
   }
-
-  const handleModelError = (event: any) => {
-    console.error("Model viewer error:", event);
-    setError("Het model kon niet worden geladen. Controleer of de link nog geldig is.");
-    setLoading(false);
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8fafc]">
@@ -115,6 +136,7 @@ export function ARViewer() {
               )}
               
               <model-viewer
+                ref={modelViewerRef}
                 src={proxyUrl}
                 ar
                 ar-modes="webxr scene-viewer quick-look"
@@ -125,8 +147,6 @@ export function ARViewer() {
                 exposure="1"
                 interaction-prompt="auto"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
-                onLoad={() => { setLoading(false); setError(null); }}
-                onError={handleModelError}
               >
                 {/* AR Start Button Customization */}
                 <button
