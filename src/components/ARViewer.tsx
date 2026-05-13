@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Maximize2, Info, Camera, AlertCircle } from "lucide-react";
 import { createServerFn } from "@tanstack/react-start";
+import { getModelProxy } from "@/lib/server-fns";
 
 // Registreer model-viewer als een custom element voor TypeScript
 declare global {
@@ -14,28 +15,6 @@ declare global {
     }
   }
 }
-
-// Server function die fungeert als proxy om CORS-problemen te omzeilen
-export const getModelProxy = createServerFn({ method: "GET" })
-  .validator((url: string) => url)
-  .handler(async ({ data: url }) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Source returned ${response.status}`);
-      
-      // We streamen de body direct terug naar de client met de juiste headers
-      return new Response(response.body, {
-        headers: {
-          "Content-Type": "model/gltf-binary",
-          "Cache-Control": "public, max-age=3600",
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    } catch (error) {
-      console.error("Proxy error:", error);
-      return new Response("Failed to fetch model", { status: 500 });
-    }
-  });
 
 const MODELS = [
   { 
