@@ -39,7 +39,6 @@ export function ARViewer() {
   const [error, setError] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState(false);
   const modelViewerRef = useRef<any>(null);
-
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
@@ -53,6 +52,16 @@ export function ARViewer() {
     // Haal de origin op voor absolute proxy URLs
     setOrigin(window.location.origin);
   }, []);
+
+  const current = MODELS[index];
+  
+  // Bepaal de finale URL. Alleen Nextcloud links hebben de proxy nodig.
+  // We gebruiken een absolute URL en voegen '.glb' toe aan het pad om iOS Quick Look te helpen.
+  let proxyUrl = current.src;
+  if (current.src.includes("nextcloud.eaxj.nl")) {
+    const baseUrl = origin || "";
+    proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
+  }
 
   // Event listeners handmatig toevoegen aan de custom element (betrouwbaarder in React)
   useEffect(() => {
@@ -71,6 +80,11 @@ export function ARViewer() {
       setLoading(false);
     };
 
+    // Check of het model misschien al geladen was voordat de listener werd toegevoegd
+    if (viewer.loaded) {
+      handleLoad();
+    }
+
     viewer.addEventListener("load", handleLoad);
     viewer.addEventListener("error", handleError);
 
@@ -78,17 +92,16 @@ export function ARViewer() {
       viewer.removeEventListener("load", handleLoad);
       viewer.removeEventListener("error", handleError);
     };
-  }, [index, origin]); // Reset listeners als we van model wisselen
+  }, [index, origin, proxyUrl]);
 
-  const current = MODELS[index];
-  
-  // Bepaal de finale URL. Alleen Nextcloud links hebben de proxy nodig.
-  // We gebruiken een absolute URL en voegen '.glb' toe aan het pad om iOS Quick Look te helpen.
-  let proxyUrl = current.src;
-  if (current.src.includes("nextcloud.eaxj.nl")) {
-    const baseUrl = origin || "";
-    proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
-  }
+  const handleSelection = (i: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (i !== index) {
+      setLoading(true);
+      setError(null);
+      setIndex(i);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8fafc]">
@@ -125,7 +138,7 @@ export function ARViewer() {
                   <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Oeps! Er ging iets mis</h3>
                   <p className="text-sm text-slate-600 mb-6 max-w-xs">{error}</p>
-                  <Button onClick={() => { setError(null); setLoading(true); }} variant="outline">
+                  <Button onClick={(e) => { e.preventDefault(); setError(null); setLoading(true); }} variant="outline">
                     Probeer opnieuw
                   </Button>
                 </div>
@@ -142,11 +155,15 @@ export function ARViewer() {
                 auto-rotate
                 exposure="1"
                 interaction-prompt="auto"
+                loading="eager"
+                reveal="auto"
+                powerPreference="high-performance"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
                 {/* AR Start Button Customization */}
                 <button
                   slot="ar-button"
+                  type="button"
                   className="absolute bottom-6 right-6 flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white shadow-xl transition-all hover:scale-105 active:scale-95"
                 >
                   <Camera className="h-4 w-4" />
@@ -179,13 +196,8 @@ export function ARViewer() {
               {MODELS.map((m, i) => (
                 <button
                   key={m.id}
-                  onClick={() => {
-                    if (i !== index) {
-                      setLoading(true);
-                      setError(null);
-                      setIndex(i);
-                    }
-                  }}
+                  type="button"
+                  onClick={(e) => handleSelection(i, e)}
                   className={cn(
                     "group relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
                     i === index

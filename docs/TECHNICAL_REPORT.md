@@ -55,7 +55,30 @@ Implementatie van een **Server-Side Proxy**.
 - **Single File:** Een `.gltf` bestand heeft vaak losse textures (.jpg, .png) en shader-bestanden nodig. Een `.glb` is een binair pakket waar alles in zit. Dit is veel makkelijker te beheren via een proxy en Nextcloud links.
 - **Bestandsgrootte:** Door de binaire structuur is een `.glb` vaak kleiner dan een ongecomprimeerde `.gltf`, wat essentieel is voor mobiele gebruikers op een 4G/5G netwerk.
 
-## 5. Deployment: Cloudflare Workers
+## 5. Performance & Optimalisatie (Model Grootte)
+
+### Onderzoeksvraag:
+Waarom laden modellen traag op mobiele apparaten of zorgen ze voor instabiliteit (refreshes) op iOS?
+
+### Bevindingen:
+Tijdens het testen bleek dat grote 3D-modellen (hoge poly-count of grote textures) leiden tot:
+- **Lange laadtijden:** Vooral op mobiele netwerken.
+- **Instabiliteit op iOS:** Safari op iOS heeft een strikt geheugenlimiet voor web-content. Als een model te groot is, kan de browser de pagina herladen of de AR-functie weigeren te starten.
+
+### Aanbevolen Optimalisaties:
+Om een soepele ervaring te garanderen, moeten de `.glb` bestanden geoptimaliseerd worden:
+1.  **Polygon Reduction:** Verminder het aantal polygonen in software zoals Blender. Streef naar maximaal 100k - 200k polygonen voor web-gebruik.
+2.  **Texture Compressie:** Gebruik texturen van maximaal 1024x1024 of 2048x2048 pixels. Forceer het gebruik van gecomprimeerde formaten (JPG of WebP binnen de GLB).
+3.  **Draco Compressie:** Gebruik Google's Draco geometry compression om de bestandsgrootte van de geometrie drastisch te verkleinen zonder zichtbaar kwaliteitsverlies.
+4.  **Bestandsgrootte target:** Streef naar een bestandsgrootte van **onder de 10MB** per model voor de beste balans tussen kwaliteit en snelheid.
+
+### Geavanceerde Netwerk-optimalisaties:
+Tijdens de ontwikkeling zijn extra stappen ondernomen om de proxy-server te versnellen:
+- **ArrayBuffer vs Streaming:** Mobiele browsers (vooral op iOS) kunnen soms "hangen" op lange data-streams. Door het bestand op de server eerst volledig in een `arrayBuffer` te laden en dan in één keer te versturen, wordt de verbinding stabieler.
+- **Browser Caching:** Door de header `Cache-Control: public, max-age=86400` mee te geven, hoeft de mobiele browser het model bij een tweede bezoek niet opnieuw te downloaden. Dit bespaart batterij en data.
+- **Virtual Extensions:** Door de proxy-URL te laten eindigen op `/model.glb` wordt de browser geholpen bij het herkennen van het MIME-type, wat essentieel is voor iOS Quick Look.
+
+## 6. Deployment: Cloudflare Workers
 
 ### Keuze:
 Serverless hosting via Cloudflare.

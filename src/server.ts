@@ -85,8 +85,12 @@ export default {
         newHeaders.set("Content-Type", "model/gltf-binary");
         // Help iOS Quick Look door een filename te suggereren
         newHeaders.set("Content-Disposition", "inline; filename=\"model.glb\"");
+        // Voeg agressieve caching toe om netwerkverkeer op mobiel te minimaliseren
+        newHeaders.set("Cache-Control", "public, max-age=86400, immutable");
 
-        return new Response(response.body, {
+        // Gebruik arrayBuffer voor betere compatibiliteit met sommige mobiele browsers die moeite hebben met streams
+        const data = await response.arrayBuffer();
+        return new Response(data, {
           status: response.status,
           headers: newHeaders,
         });
