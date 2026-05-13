@@ -90,8 +90,7 @@ export function ARViewer() {
   let proxyUrl = current.src;
 
   if (isNextcloud) {
-    const baseProxyUrl = getModelProxy.url || "/_server";
-    proxyUrl = `${baseProxyUrl}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
+    proxyUrl = `/api/proxy?url=${encodeURIComponent(current.src)}`;
   }
 
   return (

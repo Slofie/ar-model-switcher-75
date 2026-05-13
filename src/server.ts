@@ -69,6 +69,26 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+
+      // Handmatige proxy route voor 3D modellen
+      if (url.pathname === "/api/proxy") {
+        const targetUrl = url.searchParams.get("url");
+        if (!targetUrl) return new Response("Missing url parameter", { status: 400 });
+
+        console.log("Manual proxy request for:", targetUrl);
+        const response = await fetch(targetUrl);
+        
+        const newHeaders = new Headers(response.headers);
+        newHeaders.set("Access-Control-Allow-Origin", "*");
+        newHeaders.set("Content-Type", "model/gltf-binary");
+
+        return new Response(response.body, {
+          status: response.status,
+          headers: newHeaders,
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
