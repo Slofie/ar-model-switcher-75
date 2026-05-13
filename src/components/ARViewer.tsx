@@ -50,8 +50,10 @@ export function ARViewer() {
 
   const current = MODELS[index];
   
-  // Bouw de proxy URL op. TanStack Start verwacht de payload in de query string voor GET.
-  const proxyUrl = `${getModelProxy.url}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
+  // Handmatige fallback voor de proxy URL omdat het framework soms 'undefined' teruggeeft
+  // De endpoint voor server functions in TanStack Start is standaard /_server
+  const baseProxyUrl = getModelProxy.url || "/_server";
+  const proxyUrl = `${baseProxyUrl}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
 
   const handleModelError = (event: any) => {
     console.error("Model viewer error:", event);

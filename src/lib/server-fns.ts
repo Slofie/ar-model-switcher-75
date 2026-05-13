@@ -2,8 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 
 // Server function die fungeert als proxy om CORS-problemen te omzeilen
 export const getModelProxy = createServerFn("GET", async (url: string) => {
+  // TanStack Start v1 geeft de url soms direct door, of via een payload wrapper
+  // We proberen beide om robuust te zijn.
+  let targetUrl = url;
+  
   try {
-    const response = await fetch(url);
+    // Als de url een JSON string is (wat gebeurt bij de payload=... methode)
+    if (url.startsWith('"') || url.startsWith('{')) {
+      targetUrl = JSON.parse(url);
+    }
+  } catch (e) {
+    // Geen JSON, we gebruiken de originele url
+  }
+
+  console.log("Proxying request for:", targetUrl);
+
+  try {
+    const response = await fetch(targetUrl);
     if (!response.ok) throw new Error(`Source returned ${response.status}`);
     
     // We streamen de body direct terug naar de client met de juiste headers
