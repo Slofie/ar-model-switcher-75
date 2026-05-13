@@ -18,6 +18,13 @@ declare global {
 
 const MODELS = [
   { 
+    id: "test", 
+    name: "Test", 
+    label: "Betrouwbaar Testmodel", 
+    src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+    description: "Een standaard model van Google om te testen of de viewer werkt zonder proxy."
+  },
+  { 
     id: "voor", 
     name: "Voor", 
     label: "Huidige situatie", 
@@ -50,10 +57,15 @@ export function ARViewer() {
 
   const current = MODELS[index];
   
-  // Handmatige fallback voor de proxy URL omdat het framework soms 'undefined' teruggeeft
-  // De endpoint voor server functions in TanStack Start is standaard /_server
-  const baseProxyUrl = getModelProxy.url || "/_server";
-  const proxyUrl = `${baseProxyUrl}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
+  // Bepaal de finale URL. Alleen Nextcloud links hebben de proxy nodig.
+  // Andere links (zoals het testmodel) kunnen direct geladen worden.
+  const isNextcloud = current.src.includes("nextcloud.eaxj.nl");
+  let proxyUrl = current.src;
+
+  if (isNextcloud) {
+    const baseProxyUrl = getModelProxy.url || "/_server";
+    proxyUrl = `${baseProxyUrl}?payload=${encodeURIComponent(JSON.stringify(current.src))}`;
+  }
 
   const handleModelError = (event: any) => {
     console.error("Model viewer error:", event);
