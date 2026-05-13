@@ -40,6 +40,8 @@ export function ARViewer() {
   const [arSupported, setArSupported] = useState(false);
   const modelViewerRef = useRef<any>(null);
 
+  const [origin, setOrigin] = useState("");
+
   useEffect(() => {
     // Importeer de library dynamisch aan de client-side
     import("@google/model-viewer").catch(console.error);
@@ -47,6 +49,9 @@ export function ARViewer() {
     // Check of AR ondersteund wordt (basis check)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     setArSupported(isMobile);
+
+    // Haal de origin op voor absolute proxy URLs
+    setOrigin(window.location.origin);
   }, []);
 
   // Event listeners handmatig toevoegen aan de custom element (betrouwbaarder in React)
@@ -73,17 +78,16 @@ export function ARViewer() {
       viewer.removeEventListener("load", handleLoad);
       viewer.removeEventListener("error", handleError);
     };
-  }, [index]); // Reset listeners als we van model wisselen
+  }, [index, origin]); // Reset listeners als we van model wisselen
 
   const current = MODELS[index];
   
   // Bepaal de finale URL. Alleen Nextcloud links hebben de proxy nodig.
-  // Andere links (zoals het testmodel) kunnen direct geladen worden.
-  const isNextcloud = current.src.includes("nextcloud.eaxj.nl");
+  // We gebruiken een absolute URL en voegen '.glb' toe aan het pad om iOS Quick Look te helpen.
   let proxyUrl = current.src;
-
-  if (isNextcloud) {
-    proxyUrl = `/api/proxy?url=${encodeURIComponent(current.src)}`;
+  if (current.src.includes("nextcloud.eaxj.nl")) {
+    const baseUrl = origin || "";
+    proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
   }
 
   return (

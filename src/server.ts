@@ -72,7 +72,7 @@ export default {
       const url = new URL(request.url);
 
       // Handmatige proxy route voor 3D modellen
-      if (url.pathname === "/api/proxy") {
+      if (url.pathname.startsWith("/api/proxy")) {
         const targetUrl = url.searchParams.get("url");
         if (!targetUrl) return new Response("Missing url parameter", { status: 400 });
 
@@ -81,7 +81,10 @@ export default {
         
         const newHeaders = new Headers(response.headers);
         newHeaders.set("Access-Control-Allow-Origin", "*");
+        // Forceer model/gltf-binary voor .glb bestanden
         newHeaders.set("Content-Type", "model/gltf-binary");
+        // Help iOS Quick Look door een filename te suggereren
+        newHeaders.set("Content-Disposition", "inline; filename=\"model.glb\"");
 
         return new Response(response.body, {
           status: response.status,
