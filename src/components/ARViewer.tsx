@@ -18,13 +18,6 @@ declare global {
 
 const MODELS = [
   { 
-    id: "test", 
-    name: "Test", 
-    label: "Betrouwbaar Testmodel", 
-    src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    description: "Een standaard model van Google om te testen of de viewer werkt zonder proxy."
-  },
-  { 
     id: "voor", 
     name: "Voor", 
     label: "Huidige situatie", 
