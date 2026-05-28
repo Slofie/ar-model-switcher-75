@@ -44,7 +44,7 @@ const MODELS = [
     label: "Nieuwe situatie", 
     src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
     description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
-  },
+  }
 ];
 
 export function ARViewer() {
@@ -77,7 +77,6 @@ export function ARViewer() {
   const baseUrl = origin || "";
   const proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
 
-
   // Manually add event listeners to the custom element (more reliable in React)
   useEffect(() => {
     const viewer = modelViewerRef.current;
@@ -86,6 +85,10 @@ export function ARViewer() {
     const handleLoad = () => {
       setLoading(false);
       setError(null);
+      // Ensure exposure is correctly applied when a model finishes loading
+      // We use 0.4 as our baseline for day, instead of the default 1.0
+      viewer.exposure = isNightMode ? 0.08 : 0.4;
+      viewer.shadowIntensity = isNightMode ? 0.3 : 1;
     };
 
     const handleError = (event: any) => {
@@ -105,9 +108,9 @@ export function ARViewer() {
       viewer.removeEventListener("load", handleLoad);
       viewer.removeEventListener("error", handleError);
     };
-  }, [index, origin, proxyUrl]);
+  }, [index, origin, proxyUrl, isNightMode]);
 
-  // Use a separate effect to update exposure to avoid model reload/flicker
+  // Use a separate effect to update exposure when toggling night mode
   useEffect(() => {
     const viewer = modelViewerRef.current;
     if (viewer) {
@@ -150,7 +153,7 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.4 Stable
+            v2.5 Stable
           </Badge>
         </div>
       </header>
@@ -192,12 +195,12 @@ export function ARViewer() {
                 ar
                 ar-modes="webxr scene-viewer quick-look"
                 camera-controls
-                shadow-intensity="1"
+                shadow-intensity={isNightMode ? "0.3" : "1"}
                 environment-image="neutral"
                 auto-rotate
-                exposure="0.4"
+                exposure={isNightMode ? "0.08" : "0.4"}
                 interaction-prompt="auto"
-                style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
+                style={{ width: "100%", height: "100%", "--poster-color": "transparent", background: isNightMode ? "#0f172a" : "transparent" }}
               >
                 {/* AR Start Button Customization */}
                 <button
