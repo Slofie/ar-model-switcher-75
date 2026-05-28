@@ -3,9 +3,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Maximize2, Info, Camera, AlertCircle } from "lucide-react";
-import { createServerFn } from "@tanstack/react-start";
-import { getModelProxy } from "@/lib/server-fns";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { 
+  Loader2, 
+  Info, 
+  Camera, 
+  AlertCircle, 
+  MessageSquare, 
+  Send,
+  CheckCircle2
+} from "lucide-react";
 
 // Registreer model-viewer als een custom element voor TypeScript
 declare global {
@@ -17,13 +27,6 @@ declare global {
 }
 
 const MODELS = [
-  { 
-    id: "test-proxy", 
-    name: "Test (Proxy)", 
-    label: "Astronaut via Proxy", 
-    src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-    description: "Het Google testmodel, maar dan via onze proxy server om de verbinding te testen."
-  },
   { 
     id: "voor", 
     name: "Voor", 
@@ -45,6 +48,8 @@ export function ARViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const modelViewerRef = useRef<any>(null);
 
   const [origin, setOrigin] = useState("");
@@ -74,7 +79,6 @@ export function ARViewer() {
     if (!viewer) return;
 
     const handleLoad = () => {
-      console.log("Model geladen!");
       setLoading(false);
       setError(null);
     };
@@ -85,7 +89,6 @@ export function ARViewer() {
       setLoading(false);
     };
 
-    // Check of het model misschien al geladen was voordat de listener werd toegevoegd
     if (viewer.loaded) {
       handleLoad();
     }
@@ -108,6 +111,18 @@ export function ARViewer() {
     }
   };
 
+  const handleFeedbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simuleer een API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitted(true);
+      toast.success("Feedback succesvol verzonden!");
+    }, 1500);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[#f8fafc]">
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-md">
@@ -121,7 +136,7 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.1 Stable
+            v2.2 Beta
           </Badge>
         </div>
       </header>
@@ -158,7 +173,7 @@ export function ARViewer() {
                 shadow-intensity="1"
                 environment-image="neutral"
                 auto-rotate
-                exposure="0.6"
+                exposure="0.4"
                 interaction-prompt="auto"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
@@ -185,12 +200,12 @@ export function ARViewer() {
             </Card>
           </div>
 
-          {/* Controls Sectie */}
+          {/* Controls & Feedback Sectie */}
           <div className="flex flex-col gap-6 lg:col-span-4">
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-slate-900">Vergelijk Modellen</h2>
               <p className="text-sm leading-relaxed text-slate-500">
-                Wissel tussen de huidige en nieuwe situatie om de impact van het project direct te zien.
+                Wissel tussen de huidige en nieuwe situatie om de impact direct te ervaren.
               </p>
             </div>
 
@@ -228,6 +243,66 @@ export function ARViewer() {
               ))}
             </div>
 
+            {/* Feedback Formulier */}
+            <Card className="border-slate-200 p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-slate-900">Uw Mening</h3>
+              </div>
+              
+              {!submitted ? (
+                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-xs font-bold uppercase text-slate-500">Naam</Label>
+                    <Input id="name" placeholder="Uw naam" required className="bg-slate-50 border-slate-200 focus:bg-white transition-colors" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback" className="text-xs font-bold uppercase text-slate-500">Feedback</Label>
+                    <Textarea 
+                      id="feedback" 
+                      placeholder="Wat vindt u van de nieuwe situatie?" 
+                      className="min-h-[100px] bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                      required
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full font-bold transition-all active:scale-95" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verzenden...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Feedback Verzenden
+                      </>
+                    )}
+                  </Button>
+                </form>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-center animate-in fade-in zoom-in duration-300">
+                  <div className="mb-4 rounded-full bg-green-100 p-3">
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900">Bedankt!</h4>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Uw feedback is waardevol voor dit project.
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    className="mt-4 text-xs font-semibold text-primary"
+                    onClick={() => setSubmitted(false)}
+                  >
+                    Nog een bericht sturen
+                  </Button>
+                </div>
+              )}
+            </Card>
+
             {!arSupported && (
               <Card className="border-amber-100 bg-amber-50 p-4 shadow-none">
                 <div className="flex gap-3">
@@ -247,7 +322,7 @@ export function ARViewer() {
 
       <footer className="mt-12 border-t border-slate-200 bg-white px-6 py-8 text-center">
         <p className="text-sm font-medium text-slate-400">
-          © 2026 Visualisaties • CORS Proxy Actief
+          © 2026 Visualisaties • Feedback Module Actief
         </p>
       </footer>
     </div>
