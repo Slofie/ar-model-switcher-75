@@ -30,16 +30,16 @@ const MODELS = [
   { 
     id: "voor", 
     name: "Voor", 
-    label: "Current situation", 
+    label: "Huidige situatie", 
     src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download",
-    description: "The situation as it is now, without any modifications."
+    description: "De situatie zoals deze nu is, zonder aanpassingen."
   },
   { 
     id: "na", 
     name: "Na", 
-    label: "New situation", 
+    label: "Nieuwe situatie", 
     src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
-    description: "The planned new situation with all improvements applied."
+    description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
   },
 ];
 
@@ -85,7 +85,7 @@ export function ARViewer() {
 
     const handleError = (event: any) => {
       console.error("Model viewer error:", event);
-      setError("The model could not be loaded. Please check if the link is still valid.");
+      setError("Het model kon niet worden geladen. Controleer of de link nog geldig is.");
       setLoading(false);
     };
 
@@ -119,7 +119,7 @@ export function ARViewer() {
     setTimeout(() => {
       setIsSubmitting(false);
       setSubmitted(true);
-      toast.success("Feedback sent successfully!");
+      toast.success("Feedback succesvol verzonden!");
     }, 1500);
   };
 
@@ -136,14 +136,14 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.2 Beta
+            v2.3 Stable
           </Badge>
         </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 md:p-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          {/* 3D Preview Sectie */}
+          {/* 3D Preview Section */}
           <div className="lg:col-span-8">
             <Card className="relative aspect-[4/3] w-full overflow-hidden border-none bg-gradient-to-b from-slate-100 to-slate-200 shadow-2xl md:aspect-square lg:aspect-[4/3]">
               {loading && (
@@ -200,7 +200,7 @@ export function ARViewer() {
             </Card>
           </div>
 
-          {/* Controls & Feedback Sectie */}
+          {/* Controls & Feedback Section */}
           <div className="flex flex-col gap-6 lg:col-span-4">
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-slate-900">Vergelijk Modellen</h2>
@@ -249,6 +249,10 @@ export function ARViewer() {
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-xs font-bold uppercase text-slate-500">Naam</Label>
                     <Input id="name" placeholder="Uw naam" required className="bg-slate-50 border-slate-200 focus:bg-white transition-colors" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-bold uppercase text-slate-500">E-mailadres</Label>
+                    <Input id="email" type="email" placeholder="uw@email.nl" required className="bg-slate-50 border-slate-200 focus:bg-white transition-colors" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="feedback" className="text-xs font-bold uppercase text-slate-500">Feedback</Label>
