@@ -223,19 +223,13 @@ export function ARViewer() {
                   )}
                 >
                   <div className="flex w-full items-center justify-between">
-                    <span className={cn(
-                      "text-sm font-bold uppercase tracking-tight",
-                      i === index ? "text-primary" : "text-slate-500"
-                    )}>
-                      Optie {i + 1}: {m.name}
+                    <span className="text-base font-semibold text-slate-900">
+                      {m.label}
                     </span>
                     {i === index && (
                       <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                     )}
                   </div>
-                  <span className="mt-1 text-base font-semibold text-slate-900">
-                    {m.label}
-                  </span>
                   <p className="mt-2 text-xs text-slate-500 leading-snug">
                     {m.description}
                   </p>
