@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 import { 
   Loader2, 
   Info, 
@@ -14,7 +15,10 @@ import {
   AlertCircle, 
   MessageSquare, 
   Send,
-  CheckCircle2
+  CheckCircle2,
+  Moon,
+  Sun,
+  MapPin
 } from "lucide-react";
 
 // Register model-viewer as a custom element for TypeScript
@@ -39,7 +43,17 @@ const MODELS = [
     name: "Na", 
     label: "Nieuwe situatie", 
     src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
-    description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
+    description: "De geplande nieuwe situatie met alle verbeteringen toegepast.",
+    // Sample hotspots for the new situation
+    hotspots: [
+      {
+        id: "detail-1",
+        position: "0m 1m 0m",
+        normal: "0m 1m 0m",
+        title: "Nieuwe Beplanting",
+        description: "Hier komen onderhoudsvriendelijke planten die de biodiversiteit bevorderen."
+      }
+    ]
   },
 ];
 
@@ -50,6 +64,8 @@ export function ARViewer() {
   const [arSupported, setArSupported] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isNightMode, setIsNightMode] = useState(false);
+  const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const modelViewerRef = useRef<any>(null);
 
   const [origin, setOrigin] = useState("");
@@ -136,7 +152,7 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.3 Stable
+            v2.4 Interactive
           </Badge>
         </div>
       </header>
@@ -170,13 +186,34 @@ export function ARViewer() {
                 ar
                 ar-modes="webxr scene-viewer quick-look"
                 camera-controls
-                shadow-intensity="1"
+                shadow-intensity={isNightMode ? "0.3" : "1"}
                 environment-image="neutral"
                 auto-rotate
-                exposure="0.4"
+                exposure={isNightMode ? "0.08" : "0.4"}
                 interaction-prompt="auto"
-                style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
+                style={{ width: "100%", height: "100%", "--poster-color": "transparent", background: isNightMode ? "#0f172a" : "transparent" }}
               >
+                {/* Hotspots / Annotations */}
+                {current.hotspots?.map((hs: any) => (
+                  <button
+                    key={hs.id}
+                    slot={`hotspot-${hs.id}`}
+                    data-position={hs.position}
+                    data-normal={hs.normal}
+                    onClick={() => setActiveHotspot(activeHotspot === hs.id ? null : hs.id)}
+                    className="group flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all hover:scale-110"
+                  >
+                    <MapPin className="h-3 w-3" />
+                    {activeHotspot === hs.id && (
+                      <div className="absolute bottom-8 left-1/2 z-50 w-48 -translate-x-1/2 rounded-lg bg-white p-3 text-left shadow-xl animate-in fade-in zoom-in duration-200">
+                        <p className="text-xs font-bold text-slate-900">{hs.title}</p>
+                        <p className="mt-1 text-[10px] leading-tight text-slate-500">{hs.description}</p>
+                        <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+
                 {/* AR Start Button Customization */}
                 <button
                   slot="ar-button"
@@ -200,41 +237,58 @@ export function ARViewer() {
             </Card>
           </div>
 
-          {/* Controls & Feedback Section */}
+          {/* Controls & Feedback Sectie */}
           <div className="flex flex-col gap-6 lg:col-span-4">
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-slate-900">Vergelijk Modellen</h2>
-              <p className="text-sm leading-relaxed text-slate-500">
-                Wissel tussen de huidige en nieuwe situatie om de impact direct te ervaren.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {MODELS.map((m, i) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={(e) => handleSelection(i, e)}
-                  className={cn(
-                    "group relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
-                    i === index
-                      ? "border-primary bg-white shadow-md"
-                      : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className="text-base font-semibold text-slate-900">
-                      {m.label}
-                    </span>
-                    {i === index && (
-                      <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    )}
+              <h2 className="text-lg font-bold text-slate-900">Instellingen</h2>
+              
+              {/* Lighting Toggle */}
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "rounded-lg p-2 transition-colors",
+                    isNightMode ? "bg-slate-900 text-amber-400" : "bg-amber-100 text-amber-600"
+                  )}>
+                    {isNightMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500 leading-snug">
-                    {m.description}
-                  </p>
-                </button>
-              ))}
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Avond weergave</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-medium">Licht & Schaduw</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={isNightMode} 
+                  onCheckedChange={setIsNightMode}
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {MODELS.map((m, i) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={(e) => handleSelection(i, e)}
+                    className={cn(
+                      "group relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition-all",
+                      i === index
+                        ? "border-primary bg-white shadow-md"
+                        : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+                    )}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span className="text-base font-semibold text-slate-900">
+                        {m.label}
+                      </span>
+                      {i === index && (
+                        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500 leading-snug">
+                      {m.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Feedback Formulier */}
@@ -320,7 +374,7 @@ export function ARViewer() {
 
       <footer className="mt-12 border-t border-slate-200 bg-white px-6 py-8 text-center">
         <p className="text-sm font-medium text-slate-400">
-          © 2026 Visualisaties • Feedback Module Actief
+          © 2026 Visualisaties • Interactieve Annotaties & Nacht-modus
         </p>
       </footer>
     </div>
