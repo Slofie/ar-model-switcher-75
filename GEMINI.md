@@ -1,52 +1,57 @@
 # Project Overview: AR Model Switcher
 
-Dit project is een interactieve Augmented Reality (AR) viewer gebouwd met **TanStack Start**. Het stelt gebruikers in staat om 3D-modellen (GLB/GLTF) te bekijken in hun browser en deze via AR in hun fysieke ruimte te plaatsen. De focus ligt op een "Voor / Na" vergelijking van projecten.
+This project is an interactive Augmented Reality (AR) viewer built with **TanStack Start**. It allows users to view 3D models (GLB/GLTF) in their browser and place them in their physical space via AR. The focus is on a "Before / After" comparison of projects.
 
-## Architectuur & Technische Keuzes
+## Architecture & Technical Choices
 
 ### 1. Framework: TanStack Start (Beta)
-Er is gekozen voor TanStack Start vanwege de naadloze integratie tussen client-side routing (TanStack Router) en server-side logic (`createServerFn`). Dit stelt ons in staat om complexe server-functies te schrijven die direct vanuit componenten aangeroepen kunnen worden zonder een aparte API-architectuur op te tuigen.
+TanStack Start was chosen for its seamless integration between client-side routing (TanStack Router) and server-side logic (`createServerFn`). This allows us to write complex server functions that can be called directly from components without setting up a separate API architecture.
 
 ### 2. 3D & AR Engine: @google/model-viewer
-Voor de weergave wordt gebruik gemaakt van de web-standard `<model-viewer>`. 
-- **Waarom:** Het biedt native ondersteuning voor AR op zowel Android (Scene Viewer / WebXR) als iOS (Quick Look) zonder dat de gebruiker een app hoeft te installeren.
-- **Configuratie:** We gebruiken `ar-modes="webxr scene-viewer quick-look"` voor maximale compatibiliteit.
+The web-standard `<model-viewer>` is used for rendering.
+- **Why:** It provides native support for AR on both Android (Scene Viewer / WebXR) and iOS (Quick Look) without the user needing to install an app.
+- **Configuration:** We use `ar-modes="webxr scene-viewer quick-look"` for maximum compatibility.
 
-### 3. CORS & Proxy Strategie
-Veel externe bronnen (waaronder Nextcloud) blokkeren het direct laden van 3D-bestanden in een browser-component vanwege Cross-Origin Resource Sharing (CORS) restricties.
-- **Oplossing:** Er is een `getModelProxy` server-functie geïmplementeerd in `ARViewer.tsx`.
-- **Werking:** De server haalt het bestand op aan de backend-zijde en streamt de data terug naar de client met de juiste headers (`Access-Control-Allow-Origin: *`). Dit omzeilt CORS-problemen zonder dat de serverinstellingen van de bron aangepast hoeven te worden.
+### 3. CORS & Proxy Strategy
+Many external sources (including Nextcloud) block direct loading of 3D files in a browser component due to Cross-Origin Resource Sharing (CORS) restrictions.
+- **Solution:** A `getModelProxy` server function is implemented in `ARViewer.tsx`.
+- **How it works:** The server fetches the file on the backend side and streams the data back to the client with the correct headers (`Access-Control-Allow-Origin: *`). This bypasses CORS issues without needing to adjust the source's server settings.
 
-## Nextcloud Integratie
+## Nextcloud Integration
 
-Om modellen direct vanuit een eigen Nextcloud-instantie te laden, moeten de links aan specifieke eisen voldoen:
+To load models directly from your own Nextcloud instance, the links must meet specific requirements:
 
-1.  **Directe Download:** Een standaard Nextcloud deellink opent een web-interface. Voeg **/download** toe aan het einde van de URL om het directe bestand te ontsluiten.
-    - *Voorbeeld:* `https://nextcloud.eaxj.nl/s/TOKEN/download`
-2.  **Toegang:** De link moet publiek toegankelijk zijn (geen wachtwoord vereist).
-3.  **Bestandstype:** Gebruik bij voorkeur `.glb` bestanden. Dit zijn binaire containers die zowel de geometrie als de textures bevatten, wat ideaal is voor web-streaming.
+1.  **Direct Download:** A standard Nextcloud share link opens a web interface. Add **/download** to the end of the URL to unlock the direct file.
+    - *Example:* `https://nextcloud.eaxj.nl/s/TOKEN/download`
+2.  **Access:** The link must be publicly accessible (no password required).
+3.  **File Type:** Preferably use `.glb` files. These are binary containers containing both geometry and textures, ideal for web streaming.
 
-## Belangrijke Commando's
+## Important Commands
 
-| Commando | Beschrijving |
+| Command | Description |
 | :--- | :--- |
-| `npm run dev` | Start de Vite development server |
-| `npm run build` | Bouwt de applicatie voor productie |
-| `npm run start` | Start de applicatie lokaal via Wrangler (Cloudflare emulatie) |
-| `npm run lint` | Voert ESLint checks uit |
-| `npm run format` | Formatteert de code met Prettier |
+| `npm run dev` | Starts the Vite development server |
+| `npm run build` | Builds the application for production |
+| `npm run start` | Starts the application locally via Wrangler (Cloudflare emulation) |
+| `npm run lint` | Runs ESLint checks |
+| `npm run format` | Formats the code with Prettier |
 
-## Ontwikkelingsconventies
+## Git & Commits
 
-- **Componenten:** Herbruikbare UI-componenten staan in `src/components/ui/` (Shadcn).
-- **Pad Aliassen:** Gebruik `@/` om te verwijzen naar de `src/` directory.
-- **Routing:** Nieuwe routes worden toegevoegd in `src/routes/`.
-- **Server-side acties:** Gebruik `createServerFn` met de moderne object-syntax (`{ method: 'GET' }`) en een `.validator()` voor correcte RPC-URL generatie.
+- **Commit Messages:** Always provide a clear, concise commit message in English after every set of changes.
 
-## Projectstructuur
+## Development Conventions
 
-- `src/components/`: Bevat de hoofdcomponenten zoals `ARViewer.tsx`.
-- `src/routes/`: TanStack Router pagina's en layouts.
-- `src/server.ts`: Entry point voor de Cloudflare Worker / SSR wrapper (bevat ook error-handling voor SSR).
-- `src/styles.css`: Tailwind CSS 4 configuratie.
-- `wrangler.jsonc`: Configuratie voor Cloudflare deployment.
+- **Language:** All code comments, documentation, and commit messages must be in English.
+- **Components:** Reusable UI components are located in `src/components/ui/` (Shadcn).
+- **Path Aliases:** Use `@/` to refer to the `src/` directory.
+- **Routing:** New routes are added in `src/routes/`.
+- **Server-side actions:** Use `createServerFn` with the modern object syntax (`{ method: 'GET' }`) and a `.validator()` for correct RPC-URL generation.
+
+## Project Structure
+
+- `src/components/`: Contains main components like `ARViewer.tsx`.
+- `src/routes/`: TanStack Router pages and layouts.
+- `src/server.ts`: Entry point for the Cloudflare Worker / SSR wrapper (also contains error handling for SSR).
+- `src/styles.css`: Tailwind CSS 4 configuration.
+- `wrangler.jsonc`: Configuration for Cloudflare deployment.

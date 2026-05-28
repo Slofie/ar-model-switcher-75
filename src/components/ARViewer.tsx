@@ -17,7 +17,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 
-// Registreer model-viewer als een custom element voor TypeScript
+// Register model-viewer as a custom element for TypeScript
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -30,16 +30,16 @@ const MODELS = [
   { 
     id: "voor", 
     name: "Voor", 
-    label: "Huidige situatie", 
+    label: "Current situation", 
     src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download",
-    description: "De situatie zoals deze nu is, zonder aanpassingen."
+    description: "The situation as it is now, without any modifications."
   },
   { 
     id: "na", 
     name: "Na", 
-    label: "Nieuwe situatie", 
+    label: "New situation", 
     src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
-    description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
+    description: "The planned new situation with all improvements applied."
   },
 ];
 
@@ -55,25 +55,25 @@ export function ARViewer() {
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
-    // Importeer de library dynamisch aan de client-side
+    // Import the library dynamically on the client-side
     import("@google/model-viewer").catch(console.error);
 
-    // Check of AR ondersteund wordt (basis check)
+    // Check if AR is supported (basic check)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     setArSupported(isMobile);
 
-    // Haal de origin op voor absolute proxy URLs
+    // Get origin for absolute proxy URLs
     setOrigin(window.location.origin);
   }, []);
 
   const current = MODELS[index];
 
-  // Bepaal de finale URL. We sturen nu alles door de proxy om te testen.
+  // Determine final URL. We route everything through the proxy for testing.
   const baseUrl = origin || "";
   const proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
 
 
-  // Event listeners handmatig toevoegen aan de custom element (betrouwbaarder in React)
+  // Manually add event listeners to the custom element (more reliable in React)
   useEffect(() => {
     const viewer = modelViewerRef.current;
     if (!viewer) return;
@@ -85,7 +85,7 @@ export function ARViewer() {
 
     const handleError = (event: any) => {
       console.error("Model viewer error:", event);
-      setError("Het model kon niet worden geladen. Controleer of de link nog geldig is.");
+      setError("The model could not be loaded. Please check if the link is still valid.");
       setLoading(false);
     };
 
@@ -115,11 +115,11 @@ export function ARViewer() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simuleer een API call
+    // Simulate an API call
     setTimeout(() => {
       setIsSubmitting(false);
       setSubmitted(true);
-      toast.success("Feedback succesvol verzonden!");
+      toast.success("Feedback sent successfully!");
     }, 1500);
   };
 

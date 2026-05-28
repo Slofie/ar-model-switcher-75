@@ -71,7 +71,7 @@ export default {
     try {
       const url = new URL(request.url);
 
-      // Handmatige proxy route voor 3D modellen
+      // Manual proxy route for 3D models
       if (url.pathname.startsWith("/api/proxy")) {
         const targetUrl = url.searchParams.get("url");
         if (!targetUrl) return new Response("Missing url parameter", { status: 400 });
@@ -81,14 +81,14 @@ export default {
         
         const newHeaders = new Headers(response.headers);
         newHeaders.set("Access-Control-Allow-Origin", "*");
-        // Forceer model/gltf-binary voor .glb bestanden
+        // Force model/gltf-binary for .glb files
         newHeaders.set("Content-Type", "model/gltf-binary");
-        // Help iOS Quick Look door een filename te suggereren
+        // Help iOS Quick Look by suggesting a filename
         newHeaders.set("Content-Disposition", "inline; filename=\"model.glb\"");
-        // Behoud de cache headers voor snelheid
+        // Preserve cache headers for performance
         newHeaders.set("Cache-Control", "public, max-age=86400, immutable");
 
-        // Gebruik weer de body stream. ArrayBuffer was te zwaar voor iPad/Cloudflare.
+        // Use body stream. ArrayBuffer was too heavy for iPad/Cloudflare.
         return new Response(response.body, {
           status: response.status,
           headers: newHeaders,

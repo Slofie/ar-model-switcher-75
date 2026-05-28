@@ -1,18 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 
-// Server function die fungeert als proxy om CORS-problemen te omzeilen
+// Server function that acts as a proxy to bypass CORS issues
 export const getModelProxy = createServerFn("GET", async (url: string) => {
-  // TanStack Start v1 geeft de url soms direct door, of via een payload wrapper
-  // We proberen beide om robuust te zijn.
+  // TanStack Start v1 sometimes passes the url directly, or via a payload wrapper.
+  // We try both to be robust.
   let targetUrl = url;
   
   try {
-    // Als de url een JSON string is (wat gebeurt bij de payload=... methode)
+    // If the url is a JSON string (happens with the payload=... method)
     if (url.startsWith('"') || url.startsWith('{')) {
       targetUrl = JSON.parse(url);
     }
   } catch (e) {
-    // Geen JSON, we gebruiken de originele url
+    // Not JSON, we use the original url
   }
 
   console.log("Proxying request for:", targetUrl);
@@ -21,7 +21,7 @@ export const getModelProxy = createServerFn("GET", async (url: string) => {
     const response = await fetch(targetUrl);
     if (!response.ok) throw new Error(`Source returned ${response.status}`);
     
-    // We streamen de body direct terug naar de client met de juiste headers
+    // We stream the body directly back to the client with the correct headers
     return new Response(response.body, {
       headers: {
         "Content-Type": "model/gltf-binary",
