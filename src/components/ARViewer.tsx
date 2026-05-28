@@ -17,8 +17,7 @@ import {
   Send,
   CheckCircle2,
   Moon,
-  Sun,
-  MapPin
+  Sun
 } from "lucide-react";
 
 // Register model-viewer as a custom element for TypeScript
@@ -77,6 +76,20 @@ export function ARViewer() {
   const baseUrl = origin || "";
   const proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
 
+  // Robust function to sync exposure and lighting
+  const syncLighting = () => {
+    const viewer = modelViewerRef.current;
+    if (viewer) {
+      viewer.exposure = isNightMode ? 0.08 : 0.4;
+      viewer.shadowIntensity = isNightMode ? 0.3 : 1;
+    }
+  };
+
+  // Sync lighting whenever the mode changes
+  useEffect(() => {
+    syncLighting();
+  }, [isNightMode]);
+
   // Manually add event listeners to the custom element (more reliable in React)
   useEffect(() => {
     const viewer = modelViewerRef.current;
@@ -85,10 +98,9 @@ export function ARViewer() {
     const handleLoad = () => {
       setLoading(false);
       setError(null);
-      // Ensure exposure is correctly applied when a model finishes loading
-      // We use 0.4 as our baseline for day, instead of the default 1.0
-      viewer.exposure = isNightMode ? 0.08 : 0.4;
-      viewer.shadowIntensity = isNightMode ? 0.3 : 1;
+      // Ensure exposure is correctly applied when a model finishes loading.
+      // We use a small timeout to ensure model-viewer's internal reset is done.
+      setTimeout(syncLighting, 50);
     };
 
     const handleError = (event: any) => {
@@ -108,16 +120,7 @@ export function ARViewer() {
       viewer.removeEventListener("load", handleLoad);
       viewer.removeEventListener("error", handleError);
     };
-  }, [index, origin, proxyUrl, isNightMode]);
-
-  // Use a separate effect to update exposure when toggling night mode
-  useEffect(() => {
-    const viewer = modelViewerRef.current;
-    if (viewer) {
-      viewer.exposure = isNightMode ? 0.08 : 0.4;
-      viewer.shadowIntensity = isNightMode ? 0.3 : 1;
-    }
-  }, [isNightMode]);
+  }, [index, origin, proxyUrl]);
 
   const handleSelection = (i: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -153,7 +156,7 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.5 Stable
+            v2.6 Stable
           </Badge>
         </div>
       </header>
@@ -195,12 +198,10 @@ export function ARViewer() {
                 ar
                 ar-modes="webxr scene-viewer quick-look"
                 camera-controls
-                shadow-intensity={isNightMode ? "0.3" : "1"}
                 environment-image="neutral"
                 auto-rotate
-                exposure={isNightMode ? "0.08" : "0.4"}
                 interaction-prompt="auto"
-                style={{ width: "100%", height: "100%", "--poster-color": "transparent", background: isNightMode ? "#0f172a" : "transparent" }}
+                style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
                 {/* AR Start Button Customization */}
                 <button
@@ -362,7 +363,7 @@ export function ARViewer() {
 
       <footer className="mt-12 border-t border-slate-200 bg-white px-6 py-8 text-center">
         <p className="text-sm font-medium text-slate-400">
-          © 2026 Visualisaties • Interactieve Annotaties & Nacht-modus
+          © 2026 Visualisaties • Nacht-modus & Contrast Correctie
         </p>
       </footer>
     </div>
