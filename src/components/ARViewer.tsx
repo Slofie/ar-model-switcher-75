@@ -43,17 +43,7 @@ const MODELS = [
     name: "Na", 
     label: "Nieuwe situatie", 
     src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
-    description: "De geplande nieuwe situatie met alle verbeteringen toegepast.",
-    // Sample hotspots for the new situation
-    hotspots: [
-      {
-        id: "detail-1",
-        position: "0m 1m 0m",
-        normal: "0m 1m 0m",
-        title: "Nieuwe Beplanting",
-        description: "Hier komen onderhoudsvriendelijke planten die de biodiversiteit bevorderen."
-      }
-    ]
+    description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
   },
 ];
 
@@ -65,7 +55,6 @@ export function ARViewer() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isNightMode, setIsNightMode] = useState(false);
-  const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const modelViewerRef = useRef<any>(null);
 
   const [origin, setOrigin] = useState("");
@@ -118,6 +107,15 @@ export function ARViewer() {
     };
   }, [index, origin, proxyUrl]);
 
+  // Use a separate effect to update exposure to avoid model reload/flicker
+  useEffect(() => {
+    const viewer = modelViewerRef.current;
+    if (viewer) {
+      viewer.exposure = isNightMode ? 0.08 : 0.4;
+      viewer.shadowIntensity = isNightMode ? 0.3 : 1;
+    }
+  }, [isNightMode]);
+
   const handleSelection = (i: number, e: React.MouseEvent) => {
     e.preventDefault();
     if (i !== index) {
@@ -152,7 +150,7 @@ export function ARViewer() {
             </p>
           </div>
           <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.4 Interactive
+            v2.4 Stable
           </Badge>
         </div>
       </header>
@@ -161,11 +159,19 @@ export function ARViewer() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* 3D Preview Section */}
           <div className="lg:col-span-8">
-            <Card className="relative aspect-[4/3] w-full overflow-hidden border-none bg-gradient-to-b from-slate-100 to-slate-200 shadow-2xl md:aspect-square lg:aspect-[4/3]">
+            <Card className={cn(
+              "relative aspect-[4/3] w-full overflow-hidden border-none shadow-2xl transition-colors duration-500 md:aspect-square lg:aspect-[4/3]",
+              isNightMode ? "bg-[#0f172a]" : "bg-gradient-to-b from-slate-100 to-slate-200"
+            )}>
               {loading && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-100/50 backdrop-blur-sm">
+                <div className={cn(
+                  "absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm",
+                  isNightMode ? "bg-slate-900/50" : "bg-slate-100/50"
+                )}>
                   <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                  <p className="mt-4 text-sm font-medium text-slate-600">Model wordt geladen...</p>
+                  <p className={cn("mt-4 text-sm font-medium", isNightMode ? "text-slate-400" : "text-slate-600")}>
+                    Model wordt geladen...
+                  </p>
                 </div>
               )}
 
@@ -186,34 +192,13 @@ export function ARViewer() {
                 ar
                 ar-modes="webxr scene-viewer quick-look"
                 camera-controls
-                shadow-intensity={isNightMode ? "0.3" : "1"}
+                shadow-intensity="1"
                 environment-image="neutral"
                 auto-rotate
-                exposure={isNightMode ? "0.08" : "0.4"}
+                exposure="0.4"
                 interaction-prompt="auto"
-                style={{ width: "100%", height: "100%", "--poster-color": "transparent", background: isNightMode ? "#0f172a" : "transparent" }}
+                style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
-                {/* Hotspots / Annotations */}
-                {current.hotspots?.map((hs: any) => (
-                  <button
-                    key={hs.id}
-                    slot={`hotspot-${hs.id}`}
-                    data-position={hs.position}
-                    data-normal={hs.normal}
-                    onClick={() => setActiveHotspot(activeHotspot === hs.id ? null : hs.id)}
-                    className="group flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all hover:scale-110"
-                  >
-                    <MapPin className="h-3 w-3" />
-                    {activeHotspot === hs.id && (
-                      <div className="absolute bottom-8 left-1/2 z-50 w-48 -translate-x-1/2 rounded-lg bg-white p-3 text-left shadow-xl animate-in fade-in zoom-in duration-200">
-                        <p className="text-xs font-bold text-slate-900">{hs.title}</p>
-                        <p className="mt-1 text-[10px] leading-tight text-slate-500">{hs.description}</p>
-                        <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-
                 {/* AR Start Button Customization */}
                 <button
                   slot="ar-button"
@@ -253,7 +238,7 @@ export function ARViewer() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">Avond weergave</p>
-                    <p className="text-[10px] text-slate-500 uppercase font-medium">Licht & Schaduw</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-medium">Sfeer & Belichting</p>
                   </div>
                 </div>
                 <Switch 
