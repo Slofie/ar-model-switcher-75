@@ -72,11 +72,18 @@ Om een soepele ervaring te garanderen, moeten de `.glb` bestanden geoptimaliseer
 3.  **Draco Compressie:** Gebruik Google's Draco geometry compression om de bestandsgrootte van de geometrie drastisch te verkleinen zonder zichtbaar kwaliteitsverlies.
 4.  **Bestandsgrootte target:** Streef naar een bestandsgrootte van **onder de 10MB** per model voor de beste balans tussen kwaliteit en snelheid.
 
-### Geavanceerde Netwerk-optimalisaties:
-Tijdens de ontwikkeling zijn extra stappen ondernomen om de proxy-server te versnellen:
-- **ArrayBuffer vs Streaming:** Mobiele browsers (vooral op iOS) kunnen soms "hangen" op lange data-streams. Door het bestand op de server eerst volledig in een `arrayBuffer` te laden en dan in één keer te versturen, wordt de verbinding stabieler.
-- **Browser Caching:** Door de header `Cache-Control: public, max-age=86400` mee te geven, hoeft de mobiele browser het model bij een tweede bezoek niet opnieuw te downloaden. Dit bespaart batterij en data.
-- **Virtual Extensions:** Door de proxy-URL te laten eindigen op `/model.glb` wordt de browser geholpen bij het herkennen van het MIME-type, wat essentieel is voor iOS Quick Look.
+### Diepgaande Optimalisatie voor Grote Modellen (18MB+):
+Als een model ondanks compressie groot blijft (bijv. 18MB), zijn dit de meest effectieve stappen om het werkend te krijgen op iPhone:
+
+1.  **Textuur-resolutie (De nummer 1 reden voor crashes):**
+    - Gebruikers denken vaak dat bestandsgrootte op schijf (MB) het probleem is, maar in het RAM-geheugen van de iPhone wordt een textuur uitgepakt. Een 4K textuur verbruikt ~64MB RAM, ongeacht of de GLB klein is.
+    - **Oplossing:** Schaal alle textures in Blender of Photoshop terug naar **1024x1024**. Dit is voor mobiel vaak meer dan genoeg en bespaart enorm veel geheugen.
+2.  **Mesh Decimation (Polygonen):**
+    - Als de geometrie complex is, gebruik de 'Decimate' modifier in Blender om het aantal driehoeken te verminderen tot onder de 150.000.
+3.  **KTX2 Texture Compressie:**
+    - Gebruik tools zoals `gltf-transform` om textures om te zetten naar **KTX2**. Dit is een formaat dat direct door de GPU van de iPhone gelezen kan worden zonder het uit te pakken in het RAM.
+4.  **Merge Objects:**
+    - Veel losse objecten (draw calls) zorgen voor vertraging. Voeg objecten die hetzelfde materiaal hebben samen (Ctrl+J in Blender).
 
 ## 6. Deployment: Cloudflare Workers
 

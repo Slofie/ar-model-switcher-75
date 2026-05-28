@@ -18,6 +18,13 @@ declare global {
 
 const MODELS = [
   { 
+    id: "test-proxy", 
+    name: "Test (Proxy)", 
+    label: "Astronaut via Proxy", 
+    src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+    description: "Het Google testmodel, maar dan via onze proxy server om de verbinding te testen."
+  },
+  { 
     id: "voor", 
     name: "Voor", 
     label: "Huidige situatie", 
@@ -39,12 +46,13 @@ export function ARViewer() {
   const [error, setError] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState(false);
   const modelViewerRef = useRef<any>(null);
+
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
     // Importeer de library dynamisch aan de client-side
     import("@google/model-viewer").catch(console.error);
-    
+
     // Check of AR ondersteund wordt (basis check)
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     setArSupported(isMobile);
@@ -54,14 +62,11 @@ export function ARViewer() {
   }, []);
 
   const current = MODELS[index];
-  
-  // Bepaal de finale URL. Alleen Nextcloud links hebben de proxy nodig.
-  // We gebruiken een absolute URL en voegen '.glb' toe aan het pad om iOS Quick Look te helpen.
-  let proxyUrl = current.src;
-  if (current.src.includes("nextcloud.eaxj.nl")) {
-    const baseUrl = origin || "";
-    proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
-  }
+
+  // Bepaal de finale URL. We sturen nu alles door de proxy om te testen.
+  const baseUrl = origin || "";
+  const proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
+
 
   // Event listeners handmatig toevoegen aan de custom element (betrouwbaarder in React)
   useEffect(() => {
@@ -153,7 +158,7 @@ export function ARViewer() {
                 shadow-intensity="1"
                 environment-image="neutral"
                 auto-rotate
-                exposure="1"
+                exposure="0.6"
                 interaction-prompt="auto"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
