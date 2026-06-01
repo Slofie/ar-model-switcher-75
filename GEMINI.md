@@ -18,20 +18,25 @@ Many external sources (including Nextcloud) block direct loading of 3D files in 
 - **How it works:** The server fetches the file on the backend side and streams the data back to the client with the correct headers (`Access-Control-Allow-Origin: *`). This bypasses CORS issues.
 - **Optimization:** The proxy is only used for external URLs. Local files in `public/models/` are loaded directly.
 
-## Cloud Storage Alternatives
+## Cloud Storage & Large Files
 
-Since models are often too large for Git (binary files >10MB should generally be hosted externally), use these alternatives:
+Grote 3D-bestanden (zoals `.glb` bestanden) kunnen de website build laten mislukken als ze in de `public/` map staan. Daarom gebruiken we een speciale strategie:
 
-1.  **OneDrive (Direct Link):** 
-    - Get a share link from OneDrive.
-    - Replace the end of the URL (e.g., `?embed=1` or nothing) with `?download=1`.
-    - *Example:* `https://1drv.ms/u/s!AnH...Example?download=1`
-2.  **GitHub (LFS or Raw):** Upload models to a repository and use the "Raw" URL.
-    - *Example:* `https://raw.githubusercontent.com/USER/REPO/BRANCH/path/to/model.glb`
-3.  **Dropbox:** Use a share link and change `dl=0` to `raw=1` at the end.
-    - *Example:* `https://www.dropbox.com/s/TOKEN/model.glb?raw=1`
+### 1. GitHub Hosting (Aanbevolen)
+We gebruiken de repository zelf als opslag, maar we sluiten de bestanden uit van de website-build.
+- **Locatie:** Plaats je modellen in de map `models-storage/` (deze staat in de root, NIET in `public/`).
+- **Workflow:**
+    1. Voeg je `.glb` bestanden toe aan `models-storage/`.
+    2. Commit en push naar GitHub.
+    3. Ga op GitHub naar het bestand en klik op de knop **"Raw"**.
+    4. Kopieer die URL (bijv. `https://raw.githubusercontent.com/GEBRUIKER/REPO/BRANCH/models-storage/voor.glb`).
+    5. Gebruik deze URL in `src/components/ARViewer.tsx`.
 
-> **Note:** Always use the `/api/proxy?url=...` prefix for these external links to bypass CORS, as implemented in `ARViewer.tsx`.
+### 2. OneDrive / Dropbox
+- **OneDrive:** Gebruik een deel-link en verander het einde naar `?download=1`.
+- **Dropbox:** Gebruik een deel-link en verander `dl=0` naar `raw=1`.
+
+> **Belangrijk:** Gebruik altijd de proxy (gebeurt automatisch in de code) voor deze externe links om CORS-blokkades te voorkomen.
 
 ## Project Phases
 
