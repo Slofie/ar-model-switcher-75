@@ -14,17 +14,26 @@ The web-standard `<model-viewer>` is used for rendering.
 
 ### 3. CORS & Proxy Strategy
 Many external sources (including Nextcloud) block direct loading of 3D files in a browser component due to Cross-Origin Resource Sharing (CORS) restrictions.
-- **Solution:** A `getModelProxy` server function is implemented in `ARViewer.tsx`.
-- **How it works:** The server fetches the file on the backend side and streams the data back to the client with the correct headers (`Access-Control-Allow-Origin: *`). This bypasses CORS issues without needing to adjust the source's server settings.
+- **Solution:** A manual proxy route is implemented in `src/server.ts` accessible via `/api/proxy?url=...`.
+- **How it works:** The server fetches the file on the backend side and streams the data back to the client with the correct headers (`Access-Control-Allow-Origin: *`). This bypasses CORS issues.
+- **Optimization:** The proxy is only used for external URLs. Local files in `public/models/` are loaded directly.
 
-## Nextcloud Integration
+## Cloud Storage Alternatives
 
-To load models directly from your own Nextcloud instance, the links must meet specific requirements:
+Since Nextcloud can be unreliable, here are alternatives:
 
-1.  **Direct Download:** A standard Nextcloud share link opens a web interface. Add **/download** to the end of the URL to unlock the direct file.
-    - *Example:* `https://nextcloud.eaxj.nl/s/TOKEN/download`
-2.  **Access:** The link must be publicly accessible (no password required).
-3.  **File Type:** Preferably use `.glb` files. These are binary containers containing both geometry and textures, ideal for web streaming.
+1.  **Local Storage (Recommended):** Place your `.glb` files in `public/models/` and reference them as `/models/filename.glb`.
+2.  **GitHub:** Upload models to a repository and use the "Raw" URL.
+    - *Example:* `https://raw.githubusercontent.com/USER/REPO/BRANCH/path/to/model.glb`
+3.  **Dropbox:** Use a share link and change `dl=0` to `raw=1` at the end.
+    - *Example:* `https://www.dropbox.com/s/TOKEN/model.glb?raw=1`
+
+## Project Phases
+
+The viewer now supports three phases:
+1.  **Voor:** Current situation.
+2.  **Onder constructie:** The phase during construction/renovation.
+3.  **Na:** The final geplanned situation.
 
 ## Important Commands
 

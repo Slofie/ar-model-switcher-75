@@ -31,14 +31,21 @@ const MODELS = [
     id: "voor", 
     name: "Voor", 
     label: "Huidige situatie", 
-    src: "https://nextcloud.eaxj.nl/s/Dyk8jAxw4LQ5DiF/download",
+    src: "/models/voor.glb",
     description: "De situatie zoals deze nu is, zonder aanpassingen."
+  },
+  { 
+    id: "constructie", 
+    name: "Tijdens", 
+    label: "Onder constructie", 
+    src: "/models/constructie.glb",
+    description: "De fase tijdens de werkzaamheden en verbouwing."
   },
   { 
     id: "na", 
     name: "Na", 
     label: "Nieuwe situatie", 
-    src: "https://nextcloud.eaxj.nl/s/BgQCQLsEWy3JQY6/download",
+    src: "/models/na.glb",
     description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
   },
 ];
@@ -68,9 +75,12 @@ export function ARViewer() {
 
   const current = MODELS[index];
 
-  // Determine final URL. We route everything through the proxy for testing.
+  // Determine final URL. Use proxy only for external links.
   const baseUrl = origin || "";
-  const proxyUrl = `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`;
+  const isExternal = current.src.startsWith("http");
+  const modelUrl = isExternal 
+    ? `${baseUrl}/api/proxy/model.glb?url=${encodeURIComponent(current.src)}`
+    : current.src;
 
 
   // Manually add event listeners to the custom element (more reliable in React)
@@ -100,7 +110,7 @@ export function ARViewer() {
       viewer.removeEventListener("load", handleLoad);
       viewer.removeEventListener("error", handleError);
     };
-  }, [index, origin, proxyUrl]);
+  }, [index, origin, modelUrl]);
 
   const handleSelection = (i: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -166,7 +176,7 @@ export function ARViewer() {
               
               <model-viewer
                 ref={modelViewerRef}
-                src={proxyUrl}
+                src={modelUrl}
                 ar
                 ar-modes="webxr scene-viewer quick-look"
                 camera-controls
@@ -192,7 +202,7 @@ export function ARViewer() {
               <div className="absolute left-6 top-6 flex flex-col gap-2">
                 <Badge className={cn(
                   "w-fit px-3 py-1 text-sm font-semibold shadow-sm",
-                  index === 0 ? "bg-slate-700" : "bg-blue-600"
+                  index === 0 ? "bg-slate-700" : (index === 1 ? "bg-orange-500" : "bg-blue-600")
                 )}>
                   {current.label}
                 </Badge>

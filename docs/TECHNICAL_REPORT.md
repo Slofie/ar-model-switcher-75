@@ -1,95 +1,81 @@
-# Technisch Onderzoeksrapport: AR Model Switcher
+# Technical Research Report: AR Model Switcher
 
-Dit document dient als naslagwerk voor de gemaakte technische keuzes tijdens de ontwikkeling van de AR Model Switcher. Deze informatie kan gebruikt worden voor verslaglegging of verantwoording van het project.
+This document serves as a reference for the technical choices made during the development of the AR Model Switcher. This information can be used for reporting or project justification.
 
-## 1. Keuze voor AR-Engine: @google/model-viewer
+## 1. AR Engine Choice: @google/model-viewer
 
-### Onderzoeksvraag:
-Hoe kunnen we 3D-modellen in Augmented Reality weergeven zonder dat de gebruiker een externe app (zoals een specifieke AR-app) hoeft te installeren?
+### Research Question:
+How can we display 3D models in Augmented Reality without requiring the user to install an external app?
 
-### Keuze:
-Er is gekozen voor de `<model-viewer>` web component van Google.
+### Choice:
+The `<model-viewer>` web component from Google was selected.
 
-### Argumentatie:
-- **Cross-Platform compatibiliteit:** Het ondersteunt zowel **iOS (Apple)** als **Android**. 
-    - Op iOS maakt het gebruik van **AR Quick Look** (native .usdz preview).
-    - Op Android maakt het gebruik van **Scene Viewer** of **WebXR**.
-- **Geen App vereist:** De gebruiker opent simpelweg de URL in Safari of Chrome. Dit verlaagt de drempel voor gebruik aanzienlijk.
-- **Progressive Enhancement:** Als een apparaat geen AR ondersteunt, krijgt de gebruiker nog steeds een interactieve 3D-viewer te zien in de browser.
-- **Prestaties:** Het component is geoptimaliseerd voor mobiele browsers en gaat efficiënt om met geheugen bij het laden van 3D-modellen.
+### Rationale:
+- **Cross-Platform Compatibility:** It supports both **iOS (Apple)** and **Android**.
+    - On iOS, it utilizes **AR Quick Look** (native .usdz preview).
+    - On Android, it uses **Scene Viewer** or **WebXR**.
+- **No App Required:** Users simply open the URL in Safari or Chrome, significantly lowering the barrier to entry.
+- **Progressive Enhancement:** If a device does not support AR, the user still sees an interactive 3D viewer in the browser.
+- **Performance:** The component is optimized for mobile browsers and handles memory efficiently when loading 3D models.
 
-## 2. Framework keuze: TanStack Start
+## 2. Framework Choice: TanStack Start
 
-### Onderzoeksvraag:
-Welk framework biedt de beste balans tussen een snelle gebruikersinterface en de mogelijkheid om server-side bewerkingen uit te voeren?
+### Research Question:
+Which framework provides the best balance between a fast user interface and the ability to perform server-side operations?
 
-### Keuze:
-TanStack Start (React-gebaseerd).
+### Choice:
+TanStack Start (React-based).
 
-### Argumentatie:
-- **Server Functions (`createServerFn`):** Dit was de doorslaggevende factor. We hadden een server nodig om bestanden van Nextcloud "door te sluizen" om CORS-problemen te voorkomen. Met TanStack Start kan deze server-logica in hetzelfde bestand staan als de UI-component, wat de onderhoudbaarheid vergroot.
-- **Type-Safety:** Door het gebruik van TypeScript door de hele stack (router, state, server functions) is de kans op runtime errors minimaal.
-- **SSR (Server Side Rendering):** Zorgt voor een snellere initiële laadtijd en betere indexering door zoekmachines.
+### Rationale:
+- **Server Functions (`createServerFn`):** This was the deciding factor. We needed a server to "proxy" files from Nextcloud to prevent CORS issues. TanStack Start allows this server logic to reside in the same codebase as the UI components, increasing maintainability.
+- **Type-Safety:** Using TypeScript throughout the entire stack (router, state, server functions) minimizes runtime errors.
+- **SSR (Server Side Rendering):** Ensures faster initial load times and better search engine indexing.
 
-## 3. Hosting & CORS Problematiek (Nextcloud)
+## 3. CORS & Proxy Strategy (Nextcloud Integration)
 
-### Onderzoeksvraag:
-Hoe laden we veilig 3D-modellen vanaf een privé opslagmedium (Nextcloud) zonder tegen beveiligingsblokkades in de browser aan te lopen?
+### Research Question:
+How do we safely load 3D models from a private storage medium (Nextcloud) without running into browser security blocks?
 
-### Probleem:
-Browsers blokkeren het laden van 3D-modellen vanaf een ander domein (Nextcloud) naar de AR-app (`ar.eaxj.nl`) vanwege **CORS (Cross-Origin Resource Sharing)**. Nextcloud staat standaard niet toe dat andere websites hun bestanden direct 'embedden' in een 3D-viewer.
+### Problem:
+Browsers block loading 3D models from a different domain (Nextcloud) to the AR app due to **CORS (Cross-Origin Resource Sharing)**. Nextcloud does not allow other websites to 'embed' their files directly into a 3D viewer by default.
 
-### Oplossing:
-Implementatie van een **Server-Side Proxy**.
-- In plaats van dat de browser het model direct bij Nextcloud ophaalt, vraagt de browser het model aan onze eigen server.
-- Onze server (Cloudflare Worker via TanStack Start) haalt het bestand op bij Nextcloud.
-- De server stuurt de data terug naar de browser met de header `Access-Control-Allow-Origin: *`.
-- **Resultaat:** De browser ziet de data als "veilig" en het model wordt geladen.
+### Solution:
+Implementation of a **Server-Side Proxy**.
+- Instead of the browser fetching the model directly from Nextcloud, it requests the model from our own server.
+- Our server (Cloudflare Worker via TanStack Start) fetches the file from Nextcloud.
+- The server streams the data back to the browser with the header `Access-Control-Allow-Origin: *`.
+- **Result:** The browser treats the data as "safe," and the model loads successfully. This approach was chosen over modifying server settings as it provides a universal solution for any private cloud storage.
 
-## 4. Bestandsformaat: .GLB vs .GLTF
+## 4. Visual Atmosphere & Lighting Control
 
-### Keuze:
-**.GLB (GL Transmission Format Binary)**.
+### Research Question:
+How can we maintain consistent lighting across different models and simulate an evening atmosphere?
 
-### Argumentatie:
-- **Single File:** Een `.gltf` bestand heeft vaak losse textures (.jpg, .png) en shader-bestanden nodig. Een `.glb` is een binair pakket waar alles in zit. Dit is veel makkelijker te beheren via een proxy en Nextcloud links.
-- **Bestandsgrootte:** Door de binaire structuur is een `.glb` vaak kleiner dan een ongecomprimeerde `.gltf`, wat essentieel is voor mobiele gebruikers op een 4G/5G netwerk.
+### Findings & Implementation:
+- **Exposure Reset Issue:** During testing, we discovered that `model-viewer` resets its `exposure` to the default value (1.0) every time a new model is loaded. For the specific models used in this project, 1.0 proved to be significantly overexposed.
+- **Technical Synchronization:** A specialized `syncLighting` function was implemented. We found that applying a **50ms timeout** after the `load` event is essential to reliably override the viewer's internal reset mechanism.
+- **Standardized Values:** Baseline exposure is strictly set to **0.4** for optimal clarity in daylight mode, and **0.08** for night mode to simulate evening conditions. This simulates depth and atmosphere without requiring expensive real-time lights within the 3D model.
 
-## 5. Performance & Optimalisatie (Model Grootte)
+## 5. Participation & Feedback Strategy
 
-### Onderzoeksvraag:
-Waarom laden modellen traag op mobiele apparaten of zorgen ze voor instabiliteit (refreshes) op iOS?
+### Feature:
+Integrated Resident Feedback Form.
 
-### Bevindingen:
-Tijdens het testen bleek dat grote 3D-modellen (hoge poly-count of grote textures) leiden tot:
-- **Lange laadtijden:** Vooral op mobiele netwerken.
-- **Instabiliteit op iOS:** Safari op iOS heeft een strikt geheugenlimiet voor web-content. Als een model te groot is, kan de browser de pagina herladen of de AR-functie weigeren te starten.
+### Rationale:
+- **Identifiability:** The form explicitly requires an **Email Address**. This choice was made to ensure that project developers can follow up with residents, making the feedback loop actionable rather than anonymous.
+- **Bilingual Implementation:** A strategic decision was made to keep the **User Interface in Dutch** to ensure maximum accessibility for local residents, while maintaining **English for all code comments and technical documentation** to adhere to global software engineering standards.
 
-### Aanbevolen Optimalisaties:
-Om een soepele ervaring te garanderen, moeten de `.glb` bestanden geoptimaliseerd worden:
-1.  **Polygon Reduction:** Verminder het aantal polygonen in software zoals Blender. Streef naar maximaal 100k - 200k polygonen voor web-gebruik.
-2.  **Texture Compressie:** Gebruik texturen van maximaal 1024x1024 of 2048x2048 pixels. Forceer het gebruik van gecomprimeerde formaten (JPG of WebP binnen de GLB).
-3.  **Draco Compressie:** Gebruik Google's Draco geometry compression om de bestandsgrootte van de geometrie drastisch te verkleinen zonder zichtbaar kwaliteitsverlies.
-4.  **Bestandsgrootte target:** Streef naar een bestandsgrootte van **onder de 10MB** per model voor de beste balans tussen kwaliteit en snelheid.
+## 6. Optimization & iOS Stability
 
-### Diepgaande Optimalisatie voor Grote Modellen (18MB+):
-Als een model ondanks compressie groot blijft (bijv. 18MB), zijn dit de meest effectieve stappen om het werkend te krijgen op iPhone:
+### The "Large Texture" Challenge:
+During development, we encountered frequent crashes on iOS (Safari) when using models with high-resolution textures (e.g., 4K). 
 
-1.  **Textuur-resolutie (De nummer 1 reden voor crashes):**
-    - Gebruikers denken vaak dat bestandsgrootte op schijf (MB) het probleem is, maar in het RAM-geheugen van de iPhone wordt een textuur uitgepakt. Een 4K textuur verbruikt ~64MB RAM, ongeacht of de GLB klein is.
-    - **Oplossing:** Schaal alle textures in Blender of Photoshop terug naar **1024x1024**. Dit is voor mobiel vaak meer dan genoeg en bespaart enorm veel geheugen.
-2.  **Mesh Decimation (Polygonen):**
-    - Als de geometrie complex is, gebruik de 'Decimate' modifier in Blender om het aantal driehoeken te verminderen tot onder de 150.000.
-3.  **KTX2 Texture Compressie:**
-    - Gebruik tools zoals `gltf-transform` om textures om te zetten naar **KTX2**. Dit is een formaat dat direct door de GPU van de iPhone gelezen kan worden zonder het uit te pakken in het RAM.
-4.  **Merge Objects:**
-    - Veel losse objecten (draw calls) zorgen voor vertraging. Voeg objecten die hetzelfde materiaal hebben samen (Ctrl+J in Blender).
+### Technical Insight:
+- **RAM vs. Storage:** A common misconception is that file size (MB on disk) is the primary constraint. On iOS, the critical bottleneck is **RAM usage**. When Safari unpacks a 4K texture, it consumes ~64MB of RAM regardless of the compressed file size. If multiple textures are used, the browser exceeds its memory limit and force-refreshes the page.
+- **The Solution:** We established a strict **1024x1024 texture resolution cap**. This ensures stability on mobile devices while maintaining sufficient visual quality for web-based AR.
 
-## 6. Deployment: Cloudflare Workers
-
-### Keuze:
-Serverless hosting via Cloudflare.
-
-### Argumentatie:
-- **Lage Latency:** Cloudflare voert de code uit op servers die fysiek dicht bij de gebruiker staan (Edge computing). Dit is cruciaal voor een soepele ervaring bij het streamen van 3D-modellen.
-- **Schaalbaarheid:** De proxy-server kan duizenden aanvragen tegelijk aan zonder vertraging.
+### Recommended Optimizations for Model Export:
+1.  **Texture Resolution:** Downscale all textures to **1024x1024** or **512x512**.
+2.  **Mesh Decimation:** Aim for a maximum of **150,000 polygons** per model.
+3.  **File Format:** Always use **.GLB (Binary)** to ensure a single-file container that is easily handled by our proxy server.
+4.  **Target Size:** Aim for a total file size **under 10MB** to ensure fast loading on mobile networks (4G/5G).
