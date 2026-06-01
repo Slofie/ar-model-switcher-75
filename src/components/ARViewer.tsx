@@ -183,7 +183,7 @@ export function ARViewer() {
                 shadow-intensity="1"
                 environment-image="neutral"
                 auto-rotate
-                exposure="0.4"
+                exposure="1"
                 interaction-prompt="auto"
                 style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
               >
