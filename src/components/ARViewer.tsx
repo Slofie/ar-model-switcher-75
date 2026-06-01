@@ -31,21 +31,21 @@ const MODELS = [
     id: "voor", 
     name: "Voor", 
     label: "Huidige situatie", 
-    src: "/models/voor.glb",
+    src: "https://cvws.icloud-content.com/B/AQGNMV0eTENS6VuPhQFJo2ymCXXzAbXUynIDIMP-SxwKqhgf0nO1N43g/HuidigeSituatie.glb?o=AmRnED3kjuHNzu0zJkRME0eFMp5erXn67osrEBp-MHaD&v=1&x=3&a=CAogjJKp9z0IstHEuI6DESahBLFjj5hMk6f4AwnGi-3q2ZISbxDu5Oea6DMY7sHDnOgzIgEAUgSmCXXzWgS1N43gaie8qBINqbJnp2FxU-K_ZJE_JbS4R1Cg2lIpyquw5pPMYtNrr525ns9yJ0GVvJq6LaNqSNr15EuCBA-zat8gWcX3UMCFboPIfrkIP4BttAih1Q&e=1780323770&fl=&r=68e98ee0-62ea-4a7b-92ca-cff0653d41a1-1&k=d1ILoKiA2eMz0QFhu13McQ&ckc=com.apple.clouddocs&ckz=com.apple.CloudDocs&p=111&s=JPqnjAU8xFmPWHzX5eUFECUXRDg",
     description: "De situatie zoals deze nu is, zonder aanpassingen."
   },
   { 
     id: "constructie", 
     name: "Tijdens", 
     label: "Onder constructie", 
-    src: "/models/constructie.glb",
+    src: "https://cvws.icloud-content.com/B/AYE7F4Dr7DL6tE9pa1ng4YHfYOSFAWBoqPPgAfTiFLvMcni6u3C5Ut17/ConstructionSituatie.glb?o=AsOaKz8vEegVJGPkgmny0ff7Zd11msVDWqPUc08pgX14&v=1&x=3&a=CAogQOmTNW6G57jht9ADBAjWBlAywsWXbYif89X4YtcmQxsSbxCet5Kb6DMYnpTunOgzIgEAUgTfYOSFWgS5Ut17aifp5uflveZVSd1GTPT8QrDwF4yZoFpXUeGbVv3ig6jg8HxrYeD0WidyJ9L4CPQ2FGckqYB66AUTpL1WhEPdVxcxeWiRV-QY0LYhRG-1VySDRQ&e=1780324469&fl=&r=69682318-18be-48e5-a11b-e36181b42c22-1&k=Tlk--onENVc7TkXek25FFg&ckc=com.apple.clouddocs&ckz=com.apple.CloudDocs&p=111&s=GoTf-G8txkdJ1bDUAsTJRvTCevo",
     description: "De fase tijdens de werkzaamheden en verbouwing."
   },
   { 
     id: "na", 
     name: "Na", 
     label: "Nieuwe situatie", 
-    src: "/models/na.glb",
+    src: "https://example.com/na.glb",
     description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
   },
 ];

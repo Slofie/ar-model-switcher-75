@@ -20,13 +20,18 @@ Many external sources (including Nextcloud) block direct loading of 3D files in 
 
 ## Cloud Storage Alternatives
 
-Since Nextcloud can be unreliable, here are alternatives:
+Since models are often too large for Git (binary files >10MB should generally be hosted externally), use these alternatives:
 
-1.  **Local Storage (Recommended):** Place your `.glb` files in `public/models/` and reference them as `/models/filename.glb`.
-2.  **GitHub:** Upload models to a repository and use the "Raw" URL.
+1.  **OneDrive (Direct Link):** 
+    - Get a share link from OneDrive.
+    - Replace the end of the URL (e.g., `?embed=1` or nothing) with `?download=1`.
+    - *Example:* `https://1drv.ms/u/s!AnH...Example?download=1`
+2.  **GitHub (LFS or Raw):** Upload models to a repository and use the "Raw" URL.
     - *Example:* `https://raw.githubusercontent.com/USER/REPO/BRANCH/path/to/model.glb`
 3.  **Dropbox:** Use a share link and change `dl=0` to `raw=1` at the end.
     - *Example:* `https://www.dropbox.com/s/TOKEN/model.glb?raw=1`
+
+> **Note:** Always use the `/api/proxy?url=...` prefix for these external links to bypass CORS, as implemented in `ARViewer.tsx`.
 
 ## Project Phases
 
