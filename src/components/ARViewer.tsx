@@ -139,15 +139,15 @@ export function ARViewer() {
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">
-              Project Visualisatie
+              AR Concept
             </h1>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Augmented Reality Viewer
+              Binnenstedelijke Constructie
             </p>
           </div>
-          <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 px-3 py-1">
-            v2.3 Stable
-          </Badge>
+          <span className="text-[10px] text-slate-400 font-medium">
+            v1.0
+          </span>
         </div>
       </header>
 

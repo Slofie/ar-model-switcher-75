@@ -72,14 +72,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "AR Concept - Binnenstedelijke Constructie" },
+      { name: "description", content: "Visualisatie van binnenstedelijke constructie projecten met Augmented Reality." },
+      { name: "author", content: "Visualisaties" },
+      { property: "og:title", content: "AR Concept - Binnenstedelijke Constructie" },
+      { property: "og:description", content: "Visualisatie van binnenstedelijke constructie projecten met Augmented Reality." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

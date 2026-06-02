@@ -1,6 +1,6 @@
-# Project Overview: AR Model Switcher
+# Project Overview: AR Concept - Binnenstedelijke Constructie
 
-This project is an interactive Augmented Reality (AR) viewer built with **TanStack Start**. It allows users to view 3D models (GLB/GLTF) in their browser and place them in their physical space via AR. The focus is on a "Before / After" comparison of projects.
+This project is an interactive Augmented Reality (AR) viewer built with **TanStack Start**. It allows users to view 3D models (GLB/GLTF) in their browser and place them in their physical space via AR. The focus is on a "Before / After" comparison of urban construction projects.
 
 ## Architecture & Technical Choices
 
