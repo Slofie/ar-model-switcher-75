@@ -45,7 +45,7 @@ const MODELS = [
     id: "na", 
     name: "Na", 
     label: "Nieuwe situatie", 
-    src: "https://raw.githubusercontent.com/Slofie/ar-model-switcher-75/models-storage/na.glb",
+    src: "https://raw.githubusercontent.com/Slofie/ar-model-switcher-75/main/models-storage/na.glb",
     description: "De geplande nieuwe situatie met alle verbeteringen toegepast."
   },
 ];
