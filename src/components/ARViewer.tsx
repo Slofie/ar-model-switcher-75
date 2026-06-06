@@ -245,7 +245,22 @@ export function ARViewer() {
                   </p>
                 </button>
               ))}
+              <p className="px-2 text-[10px] italic leading-tight text-slate-400">
+                * Let op: De getoonde modellen zijn conceptuele weergaven en kunnen afwijken van de uiteindelijke realisatie.
+              </p>
             </div>
+
+            {/* Project Uitleg */}
+            <Card className="border-slate-200 p-6 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <Info className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-slate-900">Over dit Project</h3>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-600">
+                Dit project richt zich op de herinrichting van de binnenstedelijke zone om meer ruimte te bieden aan groen en voetgangers. 
+                Door middel van deze AR-viewer kunt u de impact van de geplande werkzaamheden in uw eigen omgeving ervaren.
+              </p>
+            </Card>
 
             {/* Feedback Formulier */}
             <Card className="border-slate-200 p-6 shadow-sm">
